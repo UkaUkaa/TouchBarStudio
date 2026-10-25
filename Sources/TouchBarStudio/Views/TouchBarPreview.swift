@@ -21,11 +21,11 @@ struct TouchBarPreview: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "eye")
-                Text("PREVIEW — not the physical Touch Bar").font(.caption.weight(.semibold))
+                Text(L("PREVIEW — not the physical Touch Bar")).font(.caption.weight(.semibold))
                 Spacer()
                 if estimatedWidth > availableWidth {
-                    StatusBadge(text: "May not fit: ~\(Int(estimatedWidth)) of \(Int(availableWidth)) pt", style: .warning)
-                        .help("Items that don't fit are hidden by macOS. Widths are estimated.")
+                    StatusBadge(text: L("May not fit: ~%d of %d pt", Int(estimatedWidth), Int(availableWidth)), style: .warning)
+                        .help(L("Items that don't fit are hidden by macOS. Widths are estimated."))
                 }
             }
             .foregroundStyle(.secondary)
@@ -34,7 +34,7 @@ struct TouchBarPreview: View {
                 HStack(spacing: 8) {
                     if showsCloseButton {
                         Image(systemName: "xmark.circle.fill").font(.title2).foregroundStyle(.white.opacity(0.5))
-                            .help("Close button added by macOS in experimental mode")
+                            .help(L("Close button added by macOS in experimental mode"))
                     }
                     HStack(spacing: 8) {
                         ForEach(items) { item in
@@ -56,7 +56,7 @@ struct TouchBarPreview: View {
                 .environment(\.colorScheme, .dark)
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Touch Bar layout preview")
+            .accessibilityLabel(L("Touch Bar layout preview"))
         }
     }
 
@@ -105,9 +105,9 @@ struct TouchBarPreview: View {
     private func accessibilityLabel(_ item: TouchBarItemConfig) -> String {
         switch item.kind {
         case .button: item.title.isEmpty ? item.action.summary : item.title
-        case .smallSpace: "Small space"
-        case .largeSpace: "Large space"
-        case .flexibleSpace: "Flexible space"
+        case .smallSpace: L("Small Space")
+        case .largeSpace: L("Large Space")
+        case .flexibleSpace: L("Flexible Space")
         }
     }
 
@@ -122,7 +122,7 @@ struct TouchBarPreview: View {
                 onDrop?(payload, nil)
                 return true
             }
-            .help("Drop here to add at the end")
+            .help(L("Drop here to add at the end"))
     }
 
     private var controlStrip: some View {
@@ -135,8 +135,8 @@ struct TouchBarPreview: View {
             }
         }
         .foregroundStyle(.white.opacity(0.5))
-        .accessibilityLabel("System Control Strip")
-        .help("System Control Strip (managed by macOS)")
+        .accessibilityLabel(L("System Control Strip"))
+        .help(L("System Control Strip (managed by macOS)"))
     }
 }
 

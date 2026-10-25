@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import Observation
+import TouchBarStudioCore
 
 /// Reports and requests optional permissions. Nothing here is requested at launch:
 /// the UI explains why first and only then calls `requestAccessibility()`.
@@ -32,14 +33,11 @@ final class PermissionManager {
         if let url = URL(string: string) { NSWorkspace.shared.open(url) }
     }
 
-    static let accessibilityReason = """
-        Keyboard-shortcut and media-key actions work by posting key events, which macOS only \
-        allows for apps you approve under Privacy & Security › Accessibility. Everything else \
-        (opening apps, URLs and files, copying text, scripts) works without it.
-        """
+    static var accessibilityReason: String {
+        L("Keyboard-shortcut and media-key actions work by posting key events, which macOS only allows for apps you approve under Privacy & Security › Accessibility. Everything else (opening apps, URLs and files, copying text, scripts) works without it.")
+    }
 
-    static let automationReason = """
-        AppleScript actions and some built-in app commands control other apps. macOS asks \
-        once per target app; you can change this later under Privacy & Security › Automation.
-        """
+    static var automationReason: String {
+        L("AppleScript actions and some built-in app commands control other apps. macOS asks once per target app; you can change this later under Privacy & Security › Automation.")
+    }
 }

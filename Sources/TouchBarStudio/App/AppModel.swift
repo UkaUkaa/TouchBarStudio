@@ -9,12 +9,12 @@ enum SidebarSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .dashboard: "Dashboard"
-        case .editor: "Touch Bar Editor"
-        case .actions: "Actions"
-        case .profiles: "Application Profiles"
-        case .presets: "Presets"
-        case .settings: "Settings"
+        case .dashboard: L("Dashboard")
+        case .editor: L("Touch Bar Editor")
+        case .actions: L("Actions")
+        case .profiles: L("Application Profiles")
+        case .presets: L("Presets")
+        case .settings: L("Settings")
         }
     }
 
@@ -61,17 +61,22 @@ final class AppModel {
     @ObservationIgnored var openMainWindow: (() -> Void)?
     @ObservationIgnored lazy var editor = LayoutEditorViewModel(model: self)
 
-    init(store: ConfigurationStore = ConfigurationStore(directory: ConfigurationStore.defaultDirectory())) {
+    init(store: ConfigurationStore = ConfigurationStore(directory: AppModel.configurationDirectory())) {
         self.store = store
+        // Defaults created while loading (first launch, unreadable file) are named in the
+        // system language; the saved preference is applied right after.
+        L10n.language = .system
         let loaded = store.load()
         var config = loaded.configuration
+        // Apply the interface language before any user-visible text is produced.
+        Self.applyLanguage(config.settings.language)
         if config.settings.providerKind == .systemModalExperimental && !SystemModalTouchBarProvider.isAvailable {
             config.settings.providerKind = .application
-            loadWarning = "The experimental “over all apps” mode is not available on this macOS version. Switched back to the standard mode."
+            loadWarning = L("The experimental “over all apps” mode is not available on this macOS version. Switched back to the standard mode.")
         }
         self.config = config
         if let error = loaded.recoveredFromError {
-            loadWarning = "Your configuration could not be read (\(error)). A backup was saved to \(loaded.backupURL?.lastPathComponent ?? "the app folder") and defaults were loaded."
+            loadWarning = L("Your configuration could not be read (%@). A backup was saved to %@ and defaults were loaded.", error, loaded.backupURL?.lastPathComponent ?? L("the app folder"))
         }
         trust = ScriptTrustStore(fileURL: store.trustURL)
         executor = ActionExecutor(services: LiveSystemServices(), trust: trust, policy: ExecutionPolicy(settings: config.settings))
@@ -81,15 +86,25 @@ final class AppModel {
 
     /// Called once the app has finished launching.
     func start() {
-        touchBar.onTap = { [weak self] item in self?.perform(item, source: "Touch Bar") }
+        touchBar.onTap = { [weak self] item in self?.perform(item, source: L("Touch Bar")) }
         HotKeyCenter.shared.onHotKey = { [weak self] id in
             guard let self, let item = self.findItem(id) else { return }
-            self.perform(item, source: "Hotkey")
+            self.perform(item, source: L("Hotkey"))
         }
         apps.onChange = { [weak self] in self?.refreshTouchBar() }
         apps.start()
         refreshTouchBar()
         registerHotKeys()
+    }
+
+    private static func configurationDirectory() -> URL {
+        #if DEBUG
+        // Lets development runs (e.g. snapshot captures) use a scratch configuration.
+        if let dir = ProcessInfo.processInfo.environment["TBS_CONFIG_DIR"] {
+            return URL(fileURLWithPath: dir, isDirectory: true)
+        }
+        #endif
+        return ConfigurationStore.defaultDirectory()
     }
 
     // MARK: Touch Bar
@@ -145,7 +160,7 @@ final class AppModel {
     /// Runs an action from inside the app (the “Test” buttons).
     @discardableResult
     func test(_ action: ActionConfig, associatedBundleIdentifier: String?) async -> Result<String?, ActionError> {
-        let result = await executor.run(action, context: ExecutionContext(associatedBundleIdentifier: associatedBundleIdentifier, source: "Test"))
+        let result = await executor.run(action, context: ExecutionContext(associatedBundleIdentifier: associatedBundleIdentifier, source: L("Test")))
         activity = executor.activity
         return result
     }
@@ -200,7 +215,7 @@ final class AppModel {
 
     func duplicateProfile(_ id: UUID) -> UUID? {
         guard let p = config.profile(id: id) else { return nil }
-        let copy = Profile(name: p.name + " Copy", bundleIdentifiers: [], items: p.items.map { $0.withNewID() })
+        let copy = Profile(name: L("%@ Copy", p.name), bundleIdentifiers: [], items: p.items.map { $0.withNewID() })
         return addProfile(copy)
     }
 
@@ -227,6 +242,9 @@ final class AppModel {
     // MARK: Persistence
 
     private func configurationChanged(from old: AppConfiguration) {
+        if old.settings.language != config.settings.language {
+            Self.applyLanguage(config.settings.language)
+        }
         if old.settings.providerKind != config.settings.providerKind || old.settings.keepControlStrip != config.settings.keepControlStrip {
             touchBar.setProvider(Self.makeProvider(for: config.settings))
         }
@@ -270,7 +288,7 @@ final class AppModel {
             lastSaved = Date()
             saveError = nil
         } catch {
-            saveError = "Could not save configuration: \(error.localizedDescription)"
+            saveError = L("Could not save configuration: %@", error.localizedDescription)
         }
     }
 
@@ -282,6 +300,44 @@ final class AppModel {
         editor.selectProfile(fresh.defaultProfileID)
     }
 
+    // MARK: Language
+
+    /// The resolved interface language; views use it as an identity so they rebuild on change.
+    var language: AppLanguage { config.settings.language.resolved }
+
+    /// Switches in-app texts immediately. Menus and panels provided by macOS (Edit, Window,
+    /// open/save dialogs) follow `AppleLanguages`, which AppKit reads at launch.
+    private static func applyLanguage(_ language: AppLanguage) {
+        L10n.language = language
+        if let code = language.appleLanguageCode {
+            UserDefaults.standard.set([code], forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        }
+    }
+
+    /// Whether system-provided menus still use another language until relaunch.
+    private(set) var needsRelaunchForLanguage = false
+
+    func setLanguage(_ language: AppLanguage) {
+        guard language != config.settings.language else { return }
+        config.settings.language = language
+        needsRelaunchForLanguage = true
+    }
+
+    func relaunch() {
+        saveNow()
+        let url = Bundle.main.bundleURL
+        // Start the new instance after this one has quit, so the single-window scene and
+        // the Touch Bar are owned by exactly one process.
+        let script = "sleep 1; /usr/bin/open -n \"$0\""
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", script, url.path]
+        try? process.run()
+        NSApp.terminate(nil)
+    }
+
     // MARK: Launch at login
 
     var launchAtLogin: Bool {
@@ -291,7 +347,7 @@ final class AppModel {
                 if newValue { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
                 saveError = nil
             } catch {
-                saveError = "Launch at login could not be changed: \(error.localizedDescription)"
+                saveError = L("Launch at login could not be changed: %@", error.localizedDescription)
             }
         }
     }

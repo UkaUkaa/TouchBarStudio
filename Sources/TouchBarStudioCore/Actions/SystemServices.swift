@@ -66,7 +66,7 @@ public final class LiveSystemServices: SystemServices {
 
     public func open(url: URL) async throws {
         guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil else {
-            throw ActionError.couldNotOpen("“\(url.absoluteString)” (no app handles this URL)")
+            throw ActionError.couldNotOpen(L("“%@” (no app handles this URL)", url.absoluteString))
         }
         guard NSWorkspace.shared.open(url) else { throw ActionError.couldNotOpen(url.absoluteString) }
     }
@@ -117,15 +117,15 @@ public final class LiveSystemServices: SystemServices {
 
     public func runAppleScript(_ source: String) throws -> String? {
         guard let script = NSAppleScript(source: source) else {
-            throw ActionError.scriptFailed("The script could not be created.")
+            throw ActionError.scriptFailed(L("The script could not be created."))
         }
         var errorInfo: NSDictionary?
         let result = script.executeAndReturnError(&errorInfo)
         if let errorInfo {
-            let message = errorInfo[NSAppleScript.errorMessage] as? String ?? "Unknown error"
+            let message = errorInfo[NSAppleScript.errorMessage] as? String ?? L("Unknown error")
             let number = errorInfo[NSAppleScript.errorNumber] as? Int
             if number == -1743 {
-                throw ActionError.scriptFailed("Not authorized to send Apple Events. Allow TouchBar Studio in System Settings › Privacy & Security › Automation.")
+                throw ActionError.scriptFailed(L("Not authorized to send Apple Events. Allow TouchBar Studio in System Settings › Privacy & Security › Automation."))
             }
             throw ActionError.scriptFailed(message)
         }

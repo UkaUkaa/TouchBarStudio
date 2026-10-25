@@ -13,18 +13,18 @@ struct PresetsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Presets are layout templates. Apply one to a profile, or create a new profile from it.")
+                    Text(L("Presets are layout templates. Apply one to a profile, or create a new profile from it."))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Import…", systemImage: "square.and.arrow.down") { importPreset() }
+                    Button(L("Import…"), systemImage: "square.and.arrow.down") { importPreset() }
                 }
                 if let message {
                     Banner(text: message, style: .info) { self.message = nil }
                 }
-                section("Built-in", presets: BuiltInPresets.all)
-                section("My Presets", presets: model.config.customPresets)
+                section(L("Built-in"), presets: BuiltInPresets.all)
+                section(L("My Presets"), presets: model.config.customPresets)
                 if model.config.customPresets.isEmpty {
-                    Text("Save a layout from the editor with “Save as Preset…”, or import a .json preset file.")
+                    Text(L("Save a layout from the editor with “Save as Preset…”, or import a .json preset file."))
                         .font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -34,24 +34,24 @@ struct PresetsView: View {
             ImportReviewSheet(result: box.result) { accept in
                 if accept {
                     model.config.customPresets.append(box.result.preset)
-                    message = "Imported “\(box.result.preset.name)”." + (box.result.containsScripts ? " Its scripts stay disabled until you approve each one in the editor." : "")
+                    message = L("Imported “%@”.", box.result.preset.name) + (box.result.containsScripts ? " " + L("Its scripts stay disabled until you approve each one in the editor.") : "")
                 }
                 pendingImport = nil
             }
         }
-        .alert("Import Failed", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
-            Button("OK") { importError = nil }
+        .alert(L("Import Failed"), isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
+            Button(L("OK")) { importError = nil }
         } message: {
             Text(importError ?? "")
         }
-        .confirmationDialog("Apply “\(applyTarget?.name ?? "")”", isPresented: Binding(get: { applyTarget != nil }, set: { if !$0 { applyTarget = nil } })) {
+        .confirmationDialog(L("Apply “%@”", applyTarget?.name ?? ""), isPresented: Binding(get: { applyTarget != nil }, set: { if !$0 { applyTarget = nil } })) {
             if let preset = applyTarget {
-                Button("Replace Layout of “\(model.editor.profile?.name ?? "")”") {
+                Button(L("Replace Layout of “%@”", model.editor.profile?.name ?? "")) {
                     model.editor.replaceAll(with: preset.items.map { $0.withNewID() })
-                    message = "Applied “\(preset.name)” to “\(model.editor.profile?.name ?? "")”. Use Undo in the editor to go back."
+                    message = L("Applied “%@” to “%@”. Use Undo in the editor to go back.", preset.name, model.editor.profile?.name ?? "")
                     applyTarget = nil
                 }
-                Button("Create New Profile") {
+                Button(L("Create New Profile")) {
                     let id = model.addProfile(preset.makeProfile())
                     model.editor.selectProfile(id)
                     model.section = .editor
@@ -59,7 +59,7 @@ struct PresetsView: View {
                 }
             }
         } message: {
-            Text("Replace the layout of the profile open in the editor, or create a new profile from this preset.")
+            Text(L("Replace the layout of the profile open in the editor, or create a new profile from this preset."))
         }
     }
 
@@ -84,11 +84,11 @@ struct PresetsView: View {
             }
             TouchBarPreview(items: preset.items, selection: .constant(nil), compact: true, showsControlStrip: false)
             HStack {
-                Button("Apply…") { applyTarget = preset }
-                Button("Export…") { export(preset) }
+                Button(L("Apply…")) { applyTarget = preset }
+                Button(L("Export…")) { export(preset) }
                 Spacer()
                 if !model.isBuiltIn(preset) {
-                    Button("Delete", role: .destructive) { model.config.customPresets.removeAll { $0.id == preset.id } }
+                    Button(L("Delete"), role: .destructive) { model.config.customPresets.removeAll { $0.id == preset.id } }
                 }
             }
         }
@@ -101,9 +101,9 @@ struct PresetsView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try PresetCodec.export(preset).write(to: url, options: .atomic)
-            message = "Exported “\(preset.name)” to \(url.lastPathComponent)."
+            message = L("Exported “%@” to %@.", preset.name, url.lastPathComponent)
         } catch {
-            importError = "Could not write the file: \(error.localizedDescription)"
+            importError = L("Could not write the file: %@", error.localizedDescription)
         }
     }
 
@@ -136,11 +136,11 @@ struct ImportReviewSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Import “\(result.preset.name)”?").font(.headline)
-            Text("\(result.preset.items.count) items. The file passed validation.").foregroundStyle(.secondary)
+            Text(L("Import “%@”?", result.preset.name)).font(.headline)
+            Text(Lp("%d items", result.preset.items.count) + ". " + L("The file passed validation.")).foregroundStyle(.secondary)
             TouchBarPreview(items: result.preset.items, selection: .constant(nil), compact: true, showsControlStrip: false)
             if !result.warnings.isEmpty {
-                GroupBox("Warnings") {
+                GroupBox(L("Warnings")) {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(result.warnings, id: \.self) { w in
                             Label(w.message, systemImage: "exclamationmark.triangle").font(.caption)
@@ -151,12 +151,12 @@ struct ImportReviewSheet: View {
                 }
             }
             if result.containsScripts {
-                GroupBox("Scripts in this preset (not approved — they will not run)") {
+                GroupBox(L("Scripts in this preset (not approved — they will not run)")) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(Array(result.preset.items.flatMap(\.action.scriptActions).enumerated()), id: \.offset) { _, a in
                                 VStack(alignment: .leading) {
-                                    Text(a.kind == .shellCommand ? "Shell" : "AppleScript").font(.caption.weight(.semibold))
+                                    Text(a.kind == .shellCommand ? L("Shell") : "AppleScript").font(.caption.weight(.semibold))
                                     Text(a.script ?? "").font(.caption.monospaced()).textSelection(.enabled)
                                 }
                             }
@@ -168,8 +168,8 @@ struct ImportReviewSheet: View {
             }
             HStack {
                 Spacer()
-                Button("Cancel") { completion(false) }.keyboardShortcut(.cancelAction)
-                Button("Import") { completion(true) }.keyboardShortcut(.defaultAction)
+                Button(L("Cancel")) { completion(false) }.keyboardShortcut(.cancelAction)
+                Button(L("Import")) { completion(true) }.keyboardShortcut(.defaultAction)
             }
         }
         .padding(20)

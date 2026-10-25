@@ -16,46 +16,48 @@ struct ProfilesView: View {
                         } else {
                             Image(systemName: "rectangle.stack").frame(width: 18)
                         }
-                        Text(profile.name)
+                        Text(profile.name).lineLimit(1)
                         Spacer()
                         if profile.id == model.config.defaultProfileID {
-                            Text("Default").font(.caption).foregroundStyle(.secondary)
+                            Image(systemName: "star.fill").font(.caption).foregroundStyle(.secondary)
+                                .help(L("Default profile"))
+                                .accessibilityLabel(L("Default profile"))
                         }
                         if profile.id == model.displayedProfileID {
                             Image(systemName: "rectangle.and.hand.point.up.left.filled").foregroundStyle(.green)
-                                .help("On the Touch Bar now")
+                                .help(L("On the Touch Bar now"))
                         }
                     }
                     .tag(profile.id)
                     .contextMenu {
-                        Button("Duplicate") { selection = model.duplicateProfile(profile.id) }
-                        Button("Set as Default") { model.config.defaultProfileID = profile.id }
-                        Button("Delete", role: .destructive) { confirmDelete = profile.id }
+                        Button(L("Duplicate")) { selection = model.duplicateProfile(profile.id) }
+                        Button(L("Set as Default")) { model.config.defaultProfileID = profile.id }
+                        Button(L("Delete"), role: .destructive) { confirmDelete = profile.id }
                             .disabled(model.config.profiles.count < 2)
                     }
                 }
             }
-            .frame(width: 250)
             .safeAreaInset(edge: .bottom) {
                 HStack {
                     Menu {
-                        Button("Empty Profile") { selection = model.addProfile(Profile(name: "New Profile")) }
+                        Button(L("Empty Profile")) { selection = model.addProfile(Profile(name: "New Profile")) }
                         Divider()
                         ForEach(model.allPresets) { preset in
-                            Button("From “\(preset.name)”") { selection = model.addProfile(preset.makeProfile()) }
+                            Button(L("From “%@”", preset.name)) { selection = model.addProfile(preset.makeProfile()) }
                         }
                     } label: { Image(systemName: "plus") }
                     .menuIndicator(.hidden)
                     .fixedSize()
-                    .help("New profile")
+                    .help(L("New profile"))
                     Button { if let s = selection { confirmDelete = s } } label: { Image(systemName: "minus") }
                         .disabled(selection == nil || model.config.profiles.count < 2)
-                        .help("Delete profile")
+                        .help(L("Delete profile"))
                     Spacer()
                 }
                 .buttonStyle(.borderless)
                 .padding(8)
             }
+            .frame(width: 250)
 
             Divider()
 
@@ -63,15 +65,15 @@ struct ProfilesView: View {
                 if let id = selection, model.config.profile(id: id) != nil {
                     ProfileDetailView(profileID: id)
                 } else {
-                    ContentUnavailableView("Select a Profile", systemImage: "app.badge",
-                                           description: Text("Profiles hold separate Touch Bar layouts and can be tied to applications."))
+                    ContentUnavailableView(L("Select a Profile"), systemImage: "app.badge",
+                                           description: Text(L("Profiles hold separate Touch Bar layouts and can be tied to applications.")))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear { if selection == nil { selection = model.config.defaultProfileID } }
-        .confirmationDialog("Delete this profile?", isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } })) {
-            Button("Delete", role: .destructive) {
+        .confirmationDialog(L("Delete this profile?"), isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } })) {
+            Button(L("Delete"), role: .destructive) {
                 if let id = confirmDelete {
                     model.deleteProfile(id)
                     model.editor.validateProfile()
@@ -80,7 +82,7 @@ struct ProfilesView: View {
                 confirmDelete = nil
             }
         } message: {
-            Text("Its layout will be removed. This can't be undone.")
+            Text(L("Its layout will be removed. This can't be undone."))
         }
     }
 }
@@ -94,21 +96,21 @@ struct ProfileDetailView: View {
     var body: some View {
         if let profile {
             Form {
-                Section("Profile") {
-                    TextField("Name", text: Binding(
+                Section(L("Profile")) {
+                    TextField(L("Name"), text: Binding(
                         get: { profile.name },
                         set: { v in model.updateProfile(profileID) { $0.name = v } }))
-                    Toggle("Default profile", isOn: Binding(
+                    Toggle(L("Default profile"), isOn: Binding(
                         get: { model.config.defaultProfileID == profileID },
                         set: { if $0 { model.config.defaultProfileID = profileID } }))
                         .disabled(model.config.defaultProfileID == profileID)
-                    Text("The default profile is shown when no app-specific profile matches.")
+                    Text(L("The default profile is shown when no app-specific profile matches."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
 
-                Section("Applications") {
+                Section(L("Applications")) {
                     if profile.bundleIdentifiers.isEmpty {
-                        Text("Not associated with any app.").foregroundStyle(.secondary)
+                        Text(L("Not associated with any app.")).foregroundStyle(.secondary)
                     }
                     ForEach(profile.bundleIdentifiers, id: \.self) { id in
                         HStack {
@@ -122,30 +124,30 @@ struct ProfileDetailView: View {
                                 model.updateProfile(profileID) { $0.bundleIdentifiers.removeAll { $0 == id } }
                             } label: { Image(systemName: "minus.circle") }
                             .buttonStyle(.borderless)
-                            .help("Remove association")
+                            .help(L("Remove association"))
                         }
                     }
-                    AppPickerButton(title: "Add Application…") { id in model.assign(bundleIdentifier: id, to: profileID) }
-                    Text("An app can belong to one profile; adding it here removes it from any other profile.")
+                    AppPickerButton(title: L("Add Application…")) { id in model.assign(bundleIdentifier: id, to: profileID) }
+                    Text(L("An app can belong to one profile; adding it here removes it from any other profile."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
 
-                Section("Automatic Switching") {
-                    Toggle("Switch profiles when the frontmost app changes", isOn: Binding(
+                Section(L("Automatic Switching")) {
+                    Toggle(L("Switch profiles when the frontmost app changes"), isOn: Binding(
                         get: { model.config.settings.autoSwitchProfiles },
                         set: { model.config.settings.autoSwitchProfiles = $0 }))
                     if model.providerShowsOverOtherApps {
-                        StatusBadge(text: "Supported by the current integration", style: .ok)
+                        StatusBadge(text: L("Supported by the current integration"), style: .ok)
                     } else {
-                        StatusBadge(text: "No effect with the standard integration", style: .warning)
-                        Text("TouchBar Studio detects the frontmost app (now: \(model.apps.lastExternalApp?.name ?? "–")), but the documented Touch Bar API only shows this app's layout while TouchBar Studio itself is active. Enable the experimental “over all apps” mode in Settings to apply profiles in other apps.")
+                        StatusBadge(text: L("No effect with the standard integration"), style: .warning)
+                        Text(L("TouchBar Studio detects the frontmost app (now: %@), but the documented Touch Bar API only shows this app's layout while TouchBar Studio itself is active. Enable the experimental “over all apps” mode in Settings to apply profiles in other apps.", model.apps.lastExternalApp?.name ?? "–"))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
 
-                Section("Layout") {
+                Section(L("Layout")) {
                     TouchBarPreview(items: profile.items, selection: .constant(nil), compact: true)
-                    Button("Edit Layout") {
+                    Button(L("Edit Layout")) {
                         model.editor.selectProfile(profileID)
                         model.section = .editor
                     }

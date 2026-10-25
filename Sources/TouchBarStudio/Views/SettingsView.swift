@@ -13,8 +13,28 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Touch Bar Integration") {
-                Picker("Mode", selection: Binding(
+            Section(L("Language")) {
+                Picker(L("Interface language"), selection: Binding(
+                    get: { model.config.settings.language },
+                    set: { model.setLanguage($0) })) {
+                    ForEach(AppLanguage.allCases, id: \.self) { language in
+                        Text(language.nativeName).tag(language)
+                    }
+                }
+                .pickerStyle(.segmented)
+                if model.needsRelaunchForLanguage {
+                    HStack {
+                        Text(L("Standard macOS menus and file dialogs switch language after a restart."))
+                            .font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        Button(L("Restart Now")) { model.relaunch() }
+                    }
+                }
+            }
+
+            Section(L("Touch Bar Integration")) {
+                Picker(L("Mode"), selection: Binding(
                     get: { model.config.settings.providerKind },
                     set: { kind in
                         if kind == .systemModalExperimental { confirmExperimental = true }
@@ -29,87 +49,87 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if !SystemModalTouchBarProvider.isAvailable {
-                    StatusBadge(text: "Experimental mode unavailable on this macOS version", style: .warning)
+                    StatusBadge(text: L("Experimental mode unavailable on this macOS version"), style: .warning)
                 }
                 if model.config.settings.providerKind == .systemModalExperimental {
-                    Toggle("Keep the system Control Strip and a close button", isOn: setting(\.keepControlStrip))
-                    Text("Off: your layout takes the whole Touch Bar (no brightness/volume controls). The close button hides the layout until you switch apps or choose Show on Touch Bar.")
+                    Toggle(L("Keep the system Control Strip and a close button"), isOn: setting(\.keepControlStrip))
+                    Text(L("Off: your layout takes the whole Touch Bar (no brightness/volume controls). The close button hides the layout until you switch apps or choose Show on Touch Bar."))
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Toggle("Switch profiles automatically by frontmost app", isOn: setting(\.autoSwitchProfiles))
+                Toggle(L("Switch profiles automatically by frontmost app"), isOn: setting(\.autoSwitchProfiles))
                     .disabled(!model.providerShowsOverOtherApps)
-                Toggle("Enable global hotkeys for buttons", isOn: setting(\.enableGlobalHotKeys))
+                Toggle(L("Enable global hotkeys for buttons"), isOn: setting(\.enableGlobalHotKeys))
             }
 
-            Section("Permissions") {
+            Section(L("Permissions")) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Accessibility")
+                        Text(L("Accessibility"))
                         Text(PermissionManager.accessibilityReason).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
                     if model.permissions.accessibilityGranted {
-                        StatusBadge(text: "Granted", style: .ok)
+                        StatusBadge(text: L("Granted"), style: .ok)
                     } else {
-                        Button("Grant Access…") { model.permissions.requestAccessibility() }
+                        Button(L("Grant Access…")) { model.permissions.requestAccessibility() }
                     }
                 }
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Automation")
+                        Text(L("Automation"))
                         Text(PermissionManager.automationReason).font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
-                    Button("Open Settings…") { model.permissions.openAutomationSettings() }
+                    Button(L("Open Settings…")) { model.permissions.openAutomationSettings() }
                 }
-                Button("Check Again") { model.permissions.refresh() }
-                Text("This build is ad-hoc signed: after rebuilding the app, macOS may treat it as a new app and you may need to re-enable Accessibility for it.")
+                Button(L("Check Again")) { model.permissions.refresh() }
+                Text(L("This build is ad-hoc signed: after rebuilding the app, macOS may treat it as a new app and you may need to re-enable Accessibility for it."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Section("Security") {
-                Toggle("Allow AppleScript actions", isOn: setting(\.allowAppleScript))
-                Toggle("Allow shell commands", isOn: Binding(
+            Section(L("Security")) {
+                Toggle(L("Allow AppleScript actions"), isOn: setting(\.allowAppleScript))
+                Toggle(L("Allow shell commands"), isOn: Binding(
                     get: { model.config.settings.allowShellCommands },
                     set: { on in if on { confirmShell = true } else { model.config.settings.allowShellCommands = false } }))
-                Stepper("Shell command timeout: \(model.config.settings.shellTimeoutSeconds) s",
+                Stepper(L("Shell command timeout: %d s", model.config.settings.shellTimeoutSeconds),
                         value: setting(\.shellTimeoutSeconds), in: 1...600)
-                Text("Every AppleScript and shell command must be approved before its first run, and again after any edit. Imported presets never carry approvals.")
+                Text(L("Every AppleScript and shell command must be approved before its first run, and again after any edit. Imported presets never carry approvals."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Revoke All Script Approvals") { model.revokeAllApprovals() }
+                Button(L("Revoke All Script Approvals")) { model.revokeAllApprovals() }
             }
 
-            Section("General") {
-                Toggle("Launch at login", isOn: Binding(get: { model.launchAtLogin }, set: { model.launchAtLogin = $0 }))
-                LabeledContent("Configuration folder") {
-                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.configURL]) }
+            Section(L("General")) {
+                Toggle(L("Launch at login"), isOn: Binding(get: { model.launchAtLogin }, set: { model.launchAtLogin = $0 }))
+                LabeledContent(L("Configuration folder")) {
+                    Button(L("Show in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([model.store.configURL]) }
                 }
-                Button("Reset Profiles to Defaults…", role: .destructive) { confirmReset = true }
+                Button(L("Reset Profiles to Defaults…"), role: .destructive) { confirmReset = true }
             }
         }
         .formStyle(.grouped)
-        .alert("Enable experimental mode?", isPresented: $confirmExperimental) {
-            Button("Enable") { model.config.settings.providerKind = .systemModalExperimental }
-            Button("Cancel", role: .cancel) {}
+        .alert(L("Enable experimental mode?"), isPresented: $confirmExperimental) {
+            Button(L("Enable")) { model.config.settings.providerKind = .systemModalExperimental }
+            Button(L("Cancel"), role: .cancel) {}
         } message: {
-            Text("This shows your layout over every app using an undocumented macOS API. Apple doesn't support it, and a macOS update may break it. You can switch back at any time.")
+            Text(L("This shows your layout over every app using an undocumented macOS API. Apple doesn't support it, and a macOS update may break it. You can switch back at any time."))
         }
-        .alert("Allow shell commands?", isPresented: $confirmShell) {
-            Button("Allow", role: .destructive) { model.config.settings.allowShellCommands = true }
-            Button("Cancel", role: .cancel) {}
+        .alert(L("Allow shell commands?"), isPresented: $confirmShell) {
+            Button(L("Allow"), role: .destructive) { model.config.settings.allowShellCommands = true }
+            Button(L("Cancel"), role: .cancel) {}
         } message: {
-            Text("Shell commands run with your user's full permissions and can modify or delete files. Each command still needs your approval before it first runs.")
+            Text(L("Shell commands run with your user's full permissions and can modify or delete files. Each command still needs your approval before it first runs."))
         }
-        .alert("Reset all profiles?", isPresented: $confirmReset) {
-            Button("Reset", role: .destructive) { model.resetToDefaults() }
-            Button("Cancel", role: .cancel) {}
+        .alert(L("Reset all profiles?"), isPresented: $confirmReset) {
+            Button(L("Reset"), role: .destructive) { model.resetToDefaults() }
+            Button(L("Cancel"), role: .cancel) {}
         } message: {
-            Text("All profiles and layouts are replaced with the defaults. Settings and custom presets are kept.")
+            Text(L("All profiles and layouts are replaced with the defaults. Settings and custom presets are kept."))
         }
     }
 }

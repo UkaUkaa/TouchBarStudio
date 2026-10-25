@@ -10,7 +10,7 @@ struct ActionsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Card(title: "Action Types", symbol: "bolt") {
+                Card(title: L("Action Types"), symbol: "bolt") {
                     Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 10) {
                         ForEach(ActionRegistry.descriptors) { d in
                             GridRow {
@@ -25,8 +25,8 @@ struct ActionsView: View {
                     }
                 }
 
-                Card(title: "Try an Action", symbol: "play.circle") {
-                    Text("Configure any action and run it right away. Nothing here is saved.")
+                Card(title: L("Try an Action"), symbol: "play.circle") {
+                    Text(L("Configure any action and run it right away. Nothing here is saved."))
                         .font(.caption).foregroundStyle(.secondary)
                     Form {
                         ActionEditor(action: $scratch, associatedBundleIdentifier: nil, depth: 0)
@@ -35,14 +35,14 @@ struct ActionsView: View {
                     .frame(minHeight: 260)
                 }
 
-                Card(title: "Built-in App Commands", symbol: "square.grid.3x3") {
+                Card(title: L("Built-in App Commands"), symbol: "square.grid.3x3") {
                     ForEach(AppCommandCatalog.standard.groupedByApp, id: \.app) { group in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 AppIconView(bundleIdentifier: group.commands.first?.bundleIdentifier, size: 16)
                                 Text(group.app).font(.callout.weight(.semibold))
                                 if let id = group.commands.first?.bundleIdentifier, IconProvider.appName(bundleIdentifier: id) == nil {
-                                    StatusBadge(text: "Not installed", style: .warning)
+                                    StatusBadge(text: L("Not installed"), style: .warning)
                                 }
                             }
                             ForEach(group.commands) { cmd in
@@ -69,14 +69,14 @@ struct ActionsView: View {
     private func requirementBadge(_ r: ActionRequirement) -> some View {
         switch r {
         case .accessibility:
-            StatusBadge(text: "Accessibility", style: model.permissions.accessibilityGranted ? .ok : .warning)
+            StatusBadge(text: L("Accessibility"), style: model.permissions.accessibilityGranted ? .ok : .warning)
         case .automation:
-            StatusBadge(text: "Automation", style: .info)
+            StatusBadge(text: L("Automation"), style: .info)
         case .shellEnabled:
-            StatusBadge(text: model.config.settings.allowShellCommands ? "Enabled" : "Disabled in Settings",
+            StatusBadge(text: model.config.settings.allowShellCommands ? L("Enabled") : L("Disabled in Settings"),
                         style: model.config.settings.allowShellCommands ? .ok : .warning)
         case .scriptApproval:
-            StatusBadge(text: "Needs approval", style: .info)
+            StatusBadge(text: L("Needs approval"), style: .info)
         }
     }
 }

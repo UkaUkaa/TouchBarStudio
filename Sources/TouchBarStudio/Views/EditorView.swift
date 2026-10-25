@@ -24,7 +24,7 @@ struct EditorView: View {
             Divider()
             HStack(spacing: 0) {
                 ComponentLibraryView()
-                    .frame(width: 210)
+                    .frame(width: 250)
                 Divider()
                 ItemListView()
                     .frame(width: 230)
@@ -33,8 +33,8 @@ struct EditorView: View {
                     if let id = editor.selection, editor.items.contains(where: { $0.id == id }) {
                         ItemPropertiesView(itemID: id)
                     } else {
-                        ContentUnavailableView("No Item Selected", systemImage: "cursorarrow.click",
-                                               description: Text("Select an item in the preview or the list, or add one from the library."))
+                        ContentUnavailableView(L("No Item Selected"), systemImage: "cursorarrow.click",
+                                               description: Text(L("Select an item in the preview or the list, or add one from the library.")))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -46,47 +46,58 @@ struct EditorView: View {
 
     private var toolbar: some View {
         HStack(spacing: 10) {
-            Picker("Profile", selection: Binding(get: { editor.profileID }, set: { editor.selectProfile($0) })) {
+            Picker(L("Profile"), selection: Binding(get: { editor.profileID }, set: { editor.selectProfile($0) })) {
                 ForEach(model.config.profiles) { profile in
-                    Text(profile.name + (profile.id == model.config.defaultProfileID ? " (default)" : "")).tag(profile.id)
+                    Text(profile.id == model.config.defaultProfileID ? L("%@ (default)", profile.name) : profile.name).tag(profile.id)
                 }
             }
-            .frame(maxWidth: 260)
+            .frame(minWidth: 160, maxWidth: 260)
             if model.displayedProfileID == editor.profileID {
-                StatusBadge(text: "On Touch Bar now", style: .ok)
+                StatusBadge(text: L("On Touch Bar now"), style: .ok)
             }
             Spacer()
             ControlGroup {
-                Button { editor.undo() } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
-                    .disabled(!editor.canUndo).help("Undo (⌘Z)")
-                Button { editor.redo() } label: { Label("Redo", systemImage: "arrow.uturn.forward") }
-                    .disabled(!editor.canRedo).help("Redo (⇧⌘Z)")
+                Button { editor.undo() } label: { Label(L("Undo"), systemImage: "arrow.uturn.backward") }
+                    .disabled(!editor.canUndo).help(L("Undo (⌘Z)"))
+                Button { editor.redo() } label: { Label(L("Redo"), systemImage: "arrow.uturn.forward") }
+                    .disabled(!editor.canRedo).help(L("Redo (⇧⌘Z)"))
             }
             .fixedSize()
-            Button("Revert") { editor.revertToOpened() }
-                .disabled(!editor.hasChangesSinceOpened)
-                .help("Restore the layout as it was when you opened this profile")
-            Button("Save") { editor.save() }
-                .help("Changes are saved automatically; this writes immediately and sets a new revert point (⌘S)")
-            Button("Save as Preset…") {
-                presetName = editor.profile?.name ?? "My Preset"
-                showSavePreset = true
+            Button(L("Save")) { editor.save() }
+                .help(saveHelp)
+            Menu {
+                Button(L("Revert")) { editor.revertToOpened() }
+                    .disabled(!editor.hasChangesSinceOpened)
+                Button(L("Save as Preset…")) {
+                    presetName = editor.profile?.name ?? L("My Preset")
+                    showSavePreset = true
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
-            if let saved = model.lastSaved {
-                Text("Saved \(saved, style: .time)").font(.caption).foregroundStyle(.secondary)
-            }
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(L("More layout actions"))
         }
+    }
+
+    private var saveHelp: String {
+        var text = L("Changes are saved automatically; this writes immediately and sets a new revert point (⌘S)")
+        if let saved = model.lastSaved {
+            text += "\n" + L("Saved %@", saved.formatted(.dateTime.hour().minute().second().locale(L10n.language.locale)))
+        }
+        return text
     }
 
     private var savePresetSheet: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Save Layout as Preset").font(.headline)
-            TextField("Name", text: $presetName).textFieldStyle(.roundedBorder)
+            Text(L("Save Layout as Preset")).font(.headline)
+            TextField(L("Name"), text: $presetName).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("Cancel") { showSavePreset = false }.keyboardShortcut(.cancelAction)
-                Button("Save") {
-                    model.saveAsPreset(profileID: editor.profileID, name: presetName.trimmingCharacters(in: .whitespaces), summary: "Saved from “\(editor.profile?.name ?? "")”")
+                Button(L("Cancel")) { showSavePreset = false }.keyboardShortcut(.cancelAction)
+                Button(L("Save")) {
+                    model.saveAsPreset(profileID: editor.profileID, name: presetName.trimmingCharacters(in: .whitespaces), summary: L("Saved from “%@”", editor.profile?.name ?? ""))
                     showSavePreset = false
                 }
                 .keyboardShortcut(.defaultAction)
@@ -112,16 +123,16 @@ struct ComponentLibraryView: View {
 
     var body: some View {
         List {
-            Section("Layout") {
+            Section(L("Layout")) {
                 ForEach(LayoutComponent.library.prefix(4)) { row($0) }
             }
-            Section("Buttons with Action") {
+            Section(L("Buttons with Action")) {
                 ForEach(LayoutComponent.library.dropFirst(4)) { row($0) }
             }
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .top) {
-            Text("Component Library").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(L("Component Library")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.top, 8)
         }
     }
@@ -132,9 +143,10 @@ struct ComponentLibraryView: View {
             Spacer()
             Button { model.editor.add(component) } label: { Image(systemName: "plus.circle") }
                 .buttonStyle(.borderless)
-                .help("Add to layout")
-                .accessibilityLabel("Add \(component.title)")
+                .help(L("Add to layout"))
+                .accessibilityLabel(L("Add %@", component.title))
         }
+        .help(component.title)
         .draggable("component:\(component.id)")
         .onTapGesture(count: 2) { model.editor.add(component) }
     }
@@ -157,7 +169,7 @@ struct ItemListView: View {
                     }
                     Spacer()
                     if item.action.containsScript && !model.isApproved(item.action) {
-                        Image(systemName: "exclamationmark.shield").foregroundStyle(.orange).help("Contains a script that is not approved")
+                        Image(systemName: "exclamationmark.shield").foregroundStyle(.orange).help(L("Contains a script that is not approved"))
                     }
                     if let hk = item.hotKey {
                         Text(hk.displayString).font(.caption.monospaced()).foregroundStyle(.secondary)
@@ -165,8 +177,8 @@ struct ItemListView: View {
                 }
                 .tag(item.id)
                 .contextMenu {
-                    Button("Duplicate") { editor.duplicate(item.id) }
-                    Button("Delete", role: .destructive) { editor.delete(item.id) }
+                    Button(L("Duplicate")) { editor.duplicate(item.id) }
+                    Button(L("Delete"), role: .destructive) { editor.delete(item.id) }
                 }
             }
             .onMove { editor.move(fromOffsets: $0, toOffset: $1) }
@@ -175,22 +187,22 @@ struct ItemListView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            Text("Items (drag to reorder)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(L("Items (drag to reorder)")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.top, 8)
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
                 Button { editor.add(LayoutComponent.named("button")!) } label: { Image(systemName: "plus") }
-                    .help("Add button")
+                    .help(L("Add button"))
                 Button { if let id = editor.selection { editor.delete(id) } } label: { Image(systemName: "minus") }
-                    .disabled(editor.selection == nil).help("Delete selected")
+                    .disabled(editor.selection == nil).help(L("Delete selected"))
                 Button { if let id = editor.selection { editor.duplicate(id) } } label: { Image(systemName: "plus.square.on.square") }
-                    .disabled(editor.selection == nil).help("Duplicate selected")
+                    .disabled(editor.selection == nil).help(L("Duplicate selected"))
                 Spacer()
                 Button { editor.moveSelection(by: -1) } label: { Image(systemName: "arrow.left") }
-                    .disabled(editor.selection == nil).help("Move left")
+                    .disabled(editor.selection == nil).help(L("Move left"))
                 Button { editor.moveSelection(by: 1) } label: { Image(systemName: "arrow.right") }
-                    .disabled(editor.selection == nil).help("Move right")
+                    .disabled(editor.selection == nil).help(L("Move right"))
             }
             .buttonStyle(.borderless)
             .padding(8)
@@ -199,10 +211,10 @@ struct ItemListView: View {
 
     private func title(_ item: TouchBarItemConfig) -> String {
         switch item.kind {
-        case .button: item.title.isEmpty ? "(icon only)" : item.title
-        case .smallSpace: "Small Space"
-        case .largeSpace: "Large Space"
-        case .flexibleSpace: "Flexible Space"
+        case .button: item.title.isEmpty ? L("(icon only)") : item.title
+        case .smallSpace: L("Small Space")
+        case .largeSpace: L("Large Space")
+        case .flexibleSpace: L("Flexible Space")
         }
     }
 
@@ -236,20 +248,20 @@ struct ItemPropertiesView: View {
                 if item.kind == .button {
                     buttonSections(item)
                 } else {
-                    Section("Space") {
-                        Picker("Size", selection: binding("kind", \.kind, default: .smallSpace)) {
-                            Text("Small").tag(ItemKind.smallSpace)
-                            Text("Large").tag(ItemKind.largeSpace)
-                            Text("Flexible").tag(ItemKind.flexibleSpace)
+                    Section(L("Space")) {
+                        Picker(L("Size"), selection: binding("kind", \.kind, default: .smallSpace)) {
+                            Text(L("Small")).tag(ItemKind.smallSpace)
+                            Text(L("Large")).tag(ItemKind.largeSpace)
+                            Text(L("Flexible")).tag(ItemKind.flexibleSpace)
                         }
-                        Text("Spaces separate groups of buttons. A flexible space pushes the following items to the right.")
+                        Text(L("Spaces separate groups of buttons. A flexible space pushes the following items to the right."))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 Section {
                     HStack {
-                        Button("Duplicate") { model.editor.duplicate(itemID) }
-                        Button("Delete", role: .destructive) { model.editor.delete(itemID) }
+                        Button(L("Duplicate")) { model.editor.duplicate(itemID) }
+                        Button(L("Delete"), role: .destructive) { model.editor.delete(itemID) }
                     }
                 }
             }
@@ -259,10 +271,10 @@ struct ItemPropertiesView: View {
 
     @ViewBuilder
     private func buttonSections(_ item: TouchBarItemConfig) -> some View {
-        Section("Button") {
-            TextField("Title", text: binding("title", \.title, default: ""))
-            Toggle("Show title", isOn: binding("showsTitle", \.showsTitle, default: true))
-            Picker("Icon", selection: Binding(
+        Section(L("Button")) {
+            TextField(L("Title"), text: binding("title", \.title, default: ""))
+            Toggle(L("Show title"), isOn: binding("showsTitle", \.showsTitle, default: true))
+            Picker(L("Icon"), selection: Binding(
                 get: { item.icon.source },
                 set: { source in
                     model.editor.update(itemID, field: "iconSource") { config in
@@ -272,20 +284,20 @@ struct ItemPropertiesView: View {
                         }
                     }
                 })) {
-                Text("None").tag(ButtonIcon.Source.none)
-                Text("SF Symbol").tag(ButtonIcon.Source.symbol)
-                Text("App Icon").tag(ButtonIcon.Source.appIcon)
-                Text("Image File").tag(ButtonIcon.Source.imageFile)
+                Text(L("None")).tag(ButtonIcon.Source.none)
+                Text(L("SF Symbol")).tag(ButtonIcon.Source.symbol)
+                Text(L("App Icon")).tag(ButtonIcon.Source.appIcon)
+                Text(L("Image File")).tag(ButtonIcon.Source.imageFile)
             }
             switch item.icon.source {
             case .symbol:
                 SymbolField(name: binding("iconValue", \.icon.value, default: ""))
             case .appIcon:
-                BundleIdentifierField(label: "App", bundleIdentifier: binding("iconValue", \.icon.value, default: ""))
+                BundleIdentifierField(label: L("App"), bundleIdentifier: binding("iconValue", \.icon.value, default: ""))
             case .imageFile:
                 HStack {
-                    TextField("Image path", text: binding("iconValue", \.icon.value, default: ""))
-                    Button("Choose…") {
+                    TextField(L("Image path"), text: binding("iconValue", \.icon.value, default: ""))
+                    Button(L("Choose…")) {
                         let panel = NSOpenPanel()
                         panel.allowedContentTypes = [.image]
                         if panel.runModal() == .OK, let url = panel.url {
@@ -297,7 +309,7 @@ struct ItemPropertiesView: View {
             case .none:
                 EmptyView()
             }
-            LabeledContent("Color") { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
         }
 
         Section {
@@ -307,28 +319,28 @@ struct ItemPropertiesView: View {
                 depth: 0
             )
         } header: {
-            Text("Action")
+            Text(L("Action"))
         }
 
-        Section("Options") {
+        Section(L("Options")) {
             BundleIdentifierField(
-                label: "Associated app",
+                label: L("Associated app"),
                 bundleIdentifier: Binding(
                     get: { item.associatedBundleIdentifier ?? "" },
                     set: { v in model.editor.update(itemID, field: "app") { $0.associatedBundleIdentifier = v.isEmpty ? nil : v } }),
                 allowsEmpty: true
             )
-            Text("Keyboard shortcuts from this button are sent to the associated app (it is brought to the front first).")
+            Text(L("Keyboard shortcuts from this button are sent to the associated app (it is brought to the front first)."))
                 .font(.caption).foregroundStyle(.secondary)
-            LabeledContent("Global hotkey") {
+            LabeledContent(L("Global hotkey")) {
                 KeyRecorder(combo: binding("hotKey", \.hotKey, default: nil), requireModifier: true)
             }
             if let failure = model.hotKeyFailures[itemID] {
                 Text(failure).font(.caption).foregroundStyle(.red)
             } else if item.hotKey != nil && !model.config.settings.enableGlobalHotKeys {
-                Text("Global hotkeys are turned off in Settings.").font(.caption).foregroundStyle(.orange)
+                Text(L("Global hotkeys are turned off in Settings.")).font(.caption).foregroundStyle(.orange)
             } else {
-                Text("Optional. Press it anywhere to run this button's action, even when the button isn't on screen.")
+                Text(L("Optional. Press it anywhere to run this button's action, even when the button isn't on screen."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

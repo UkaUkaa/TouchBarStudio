@@ -40,7 +40,7 @@ struct PresetTests {
         #expect(throws: PresetImportError.wrongFormat("something.else")) {
             try PresetCodec.importPreset(from: Data(#"{"format":"something.else","formatVersion":1}"#.utf8))
         }
-        #expect(throws: PresetImportError.notJSON("not a JSON object")) {
+        #expect(throws: PresetImportError.notJSON(L("not a JSON object"))) {
             try PresetCodec.importPreset(from: Data("[1,2]".utf8))
         }
     }

@@ -35,12 +35,12 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var title: String {
         switch self {
-        case .playPause: "Play / Pause"
-        case .next: "Next Track"
-        case .previous: "Previous Track"
-        case .volumeUp: "Volume Up"
-        case .volumeDown: "Volume Down"
-        case .mute: "Mute"
+        case .playPause: L("Play / Pause")
+        case .next: L("Next Track")
+        case .previous: L("Previous Track")
+        case .volumeUp: L("Volume Up")
+        case .volumeDown: L("Volume Down")
+        case .mute: L("Mute")
         }
     }
 
@@ -159,20 +159,20 @@ public struct ActionConfig: Codable, Hashable, Sendable {
     /// One-line summary for lists.
     public var summary: String {
         switch kind {
-        case .none: return "No action"
-        case .openApplication: return "Open \(bundleIdentifier ?? "?")"
-        case .openURL: return "Open \(url ?? "?")"
-        case .openFile: return "Open \(path ?? "?")"
+        case .none: return L("No action")
+        case .openApplication: return L("Open %@", bundleIdentifier ?? "?")
+        case .openURL: return L("Open %@", url ?? "?")
+        case .openFile: return L("Open %@", path ?? "?")
         case .keyboardShortcut:
             let keys = keyCombo?.displayString ?? "?"
-            if let t = targetBundleIdentifier, !t.isEmpty { return "Press \(keys) in \(t)" }
-            return "Press \(keys)"
-        case .copyText: return "Copy “\((text ?? "").prefix(30))”"
-        case .appleScript: return "AppleScript (\((script ?? "").count) chars)"
-        case .shellCommand: return "Shell: \((script ?? "").prefix(40))"
-        case .appCommand: return AppCommandCatalog.standard.command(id: appCommandID ?? "")?.title ?? "Unknown command"
-        case .mediaKey: return mediaKey?.title ?? "Media key"
-        case .sequence: return "Sequence of \(steps?.count ?? 0) actions"
+            if let t = targetBundleIdentifier, !t.isEmpty { return L("Press %@ in %@", keys, t) }
+            return L("Press %@", keys)
+        case .copyText: return L("Copy “%@”", String((text ?? "").prefix(30)))
+        case .appleScript: return L("AppleScript (%d chars)", (script ?? "").count)
+        case .shellCommand: return L("Shell: %@", String((script ?? "").prefix(40)))
+        case .appCommand: return AppCommandCatalog.standard.command(id: appCommandID ?? "")?.title ?? L("Unknown command")
+        case .mediaKey: return mediaKey?.title ?? L("Media key")
+        case .sequence: return L("Sequence: %@", Lp("%d actions", steps?.count ?? 0))
         }
     }
 }

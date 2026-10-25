@@ -76,13 +76,13 @@ struct AppPickerButton: View {
 
     var body: some View {
         Menu(title) {
-            Section("Running Apps") {
+            Section(L("Running Apps")) {
                 ForEach(ApplicationProfileManager.runningApps(), id: \.bundleIdentifier) { app in
                     Button(app.name) { onPick(app.bundleIdentifier) }
                 }
             }
             Divider()
-            Button("Choose Application…") {
+            Button(L("Choose Application…")) {
                 if let id = Self.chooseApplication() { onPick(id) }
             }
         }
@@ -94,7 +94,7 @@ struct AppPickerButton: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "Choose"
+        panel.prompt = L("Choose")
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
         return Bundle(url: url)?.bundleIdentifier
     }
@@ -110,19 +110,19 @@ struct BundleIdentifierField: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 AppIconView(bundleIdentifier: bundleIdentifier.isEmpty ? nil : bundleIdentifier)
-                TextField(label, text: $bundleIdentifier, prompt: Text(allowsEmpty ? "None" : "com.example.App"))
+                TextField(label, text: $bundleIdentifier, prompt: Text(allowsEmpty ? L("None") : "com.example.App"))
                     .textFieldStyle(.roundedBorder)
-                AppPickerButton(title: "Pick") { bundleIdentifier = $0 }
+                AppPickerButton(title: L("Pick")) { bundleIdentifier = $0 }
                 if allowsEmpty && !bundleIdentifier.isEmpty {
                     Button { bundleIdentifier = "" } label: { Image(systemName: "xmark.circle.fill") }
-                        .buttonStyle(.borderless).help("Clear")
+                        .buttonStyle(.borderless).help(L("Clear"))
                 }
             }
             if !bundleIdentifier.isEmpty {
                 if let name = IconProvider.appName(bundleIdentifier: bundleIdentifier) {
                     Text(name).font(.caption).foregroundStyle(.secondary)
                 } else {
-                    Text("Not installed on this Mac").font(.caption).foregroundStyle(.orange)
+                    Text(L("Not installed on this Mac")).font(.caption).foregroundStyle(.orange)
                 }
             }
         }
@@ -141,16 +141,16 @@ struct KeyRecorder: View {
             Button {
                 recording ? stop() : start()
             } label: {
-                Text(recording ? "Press keys…" : (combo?.displayString ?? "Record Shortcut"))
+                Text(recording ? L("Press keys…") : (combo?.displayString ?? L("Record Shortcut")))
                     .frame(minWidth: 110)
                     .monospaced(combo != nil && !recording)
             }
             .buttonStyle(.bordered)
             .tint(recording ? .accentColor : nil)
-            .help("Click, then press the key combination. Esc cancels.")
+            .help(L("Click, then press the key combination. Esc cancels."))
             if combo != nil {
                 Button { combo = nil } label: { Image(systemName: "xmark.circle.fill") }
-                    .buttonStyle(.borderless).help("Clear shortcut")
+                    .buttonStyle(.borderless).help(L("Clear shortcut"))
             }
         }
         .onDisappear { stop() }
@@ -208,8 +208,8 @@ struct SymbolField: View {
             Image(systemName: IconProvider.isValidSymbol(name) ? name : "questionmark.square.dashed")
                 .frame(width: 22)
                 .foregroundStyle(IconProvider.isValidSymbol(name) ? .primary : Color.orange)
-            TextField("SF Symbol name", text: $name).textFieldStyle(.roundedBorder)
-            Button("Browse") { showPalette.toggle() }
+            TextField(L("SF Symbol name"), text: $name).textFieldStyle(.roundedBorder)
+            Button(L("Browse")) { showPalette.toggle() }
                 .popover(isPresented: $showPalette) {
                     ScrollView {
                         LazyVGrid(columns: Array(repeating: GridItem(.fixed(34)), count: 8), spacing: 6) {
@@ -227,7 +227,7 @@ struct SymbolField: View {
                 }
         }
         if !name.isEmpty && !IconProvider.isValidSymbol(name) {
-            Text("“\(name)” is not an SF Symbol on this Mac.").font(.caption).foregroundStyle(.orange)
+            Text(L("“%@” is not an SF Symbol on this Mac.", name)).font(.caption).foregroundStyle(.orange)
         }
     }
 }
@@ -237,7 +237,21 @@ extension ButtonColor {
         nsColor.map(Color.init(nsColor:)) ?? Color(white: 0.27)
     }
 
-    var title: String { rawValue == "standard" ? "Default" : rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .standard: L("Default")
+        case .gray: L("Gray")
+        case .red: L("Red")
+        case .orange: L("Orange")
+        case .yellow: L("Yellow")
+        case .green: L("Green")
+        case .teal: L("Teal")
+        case .blue: L("Blue")
+        case .indigo: L("Indigo")
+        case .purple: L("Purple")
+        case .pink: L("Pink")
+        }
+    }
 }
 
 struct ColorSwatchPicker: View {

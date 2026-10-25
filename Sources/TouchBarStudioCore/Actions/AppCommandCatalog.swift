@@ -28,50 +28,51 @@ public struct AppCommandCatalog: Sendable {
         return order.map { ($0, groups[$0]!) }
     }
 
-    public static let standard: AppCommandCatalog = {
+    /// Computed so titles follow the current interface language.
+    public static var standard: AppCommandCatalog {
         func key(_ id: String, _ title: String, _ app: String, _ bundle: String?, _ symbol: String, _ combo: KeyCombo) -> AppCommand {
             AppCommand(id: id, title: title, appName: app, bundleIdentifier: bundle, symbol: symbol,
                        action: .shortcut(combo, in: bundle))
         }
         let finder = "com.apple.finder", safari = "com.apple.Safari", terminal = "com.apple.Terminal", xcode = "com.apple.dt.Xcode"
         return AppCommandCatalog(commands: [
-            key("finder.newWindow", "New Window", "Finder", finder, "macwindow.badge.plus", KeyCombo("N", .command)),
-            key("finder.goHome", "Go to Home", "Finder", finder, "house", KeyCombo("H", [.command, .shift])),
-            key("finder.goDownloads", "Go to Downloads", "Finder", finder, "arrow.down.circle", KeyCombo("L", [.command, .option])),
-            key("finder.toggleHidden", "Show/Hide Hidden Files", "Finder", finder, "eye", KeyCombo(".", [.command, .shift])),
-            key("finder.getInfo", "Get Info", "Finder", finder, "info.circle", KeyCombo("I", .command)),
+            key("finder.newWindow", L("New Window"), "Finder", finder, "macwindow.badge.plus", KeyCombo("N", .command)),
+            key("finder.goHome", L("Go to Home"), "Finder", finder, "house", KeyCombo("H", [.command, .shift])),
+            key("finder.goDownloads", L("Go to Downloads"), "Finder", finder, "arrow.down.circle", KeyCombo("L", [.command, .option])),
+            key("finder.toggleHidden", L("Show/Hide Hidden Files"), "Finder", finder, "eye", KeyCombo(".", [.command, .shift])),
+            key("finder.getInfo", L("Get Info"), "Finder", finder, "info.circle", KeyCombo("I", .command)),
 
-            key("safari.newTab", "New Tab", "Safari", safari, "plus.square.on.square", KeyCombo("T", .command)),
-            key("safari.reopenTab", "Reopen Closed Tab", "Safari", safari, "arrow.uturn.backward", KeyCombo("T", [.command, .shift])),
-            key("safari.reload", "Reload Page", "Safari", safari, "arrow.clockwise", KeyCombo("R", .command)),
-            key("safari.back", "Back", "Safari", safari, "chevron.backward", KeyCombo("[", .command)),
-            key("safari.forward", "Forward", "Safari", safari, "chevron.forward", KeyCombo("]", .command)),
-            key("safari.readerMode", "Reader Mode", "Safari", safari, "doc.plaintext", KeyCombo("R", [.command, .shift])),
+            key("safari.newTab", L("New Tab"), "Safari", safari, "plus.square.on.square", KeyCombo("T", .command)),
+            key("safari.reopenTab", L("Reopen Closed Tab"), "Safari", safari, "arrow.uturn.backward", KeyCombo("T", [.command, .shift])),
+            key("safari.reload", L("Reload Page"), "Safari", safari, "arrow.clockwise", KeyCombo("R", .command)),
+            key("safari.back", L("Back"), "Safari", safari, "chevron.backward", KeyCombo("[", .command)),
+            key("safari.forward", L("Forward"), "Safari", safari, "chevron.forward", KeyCombo("]", .command)),
+            key("safari.readerMode", L("Reader Mode"), "Safari", safari, "doc.plaintext", KeyCombo("R", [.command, .shift])),
 
-            key("terminal.newWindow", "New Window", "Terminal", terminal, "terminal", KeyCombo("N", .command)),
-            key("terminal.newTab", "New Tab", "Terminal", terminal, "plus.rectangle", KeyCombo("T", .command)),
-            key("terminal.clear", "Clear Scrollback", "Terminal", terminal, "clear", KeyCombo("K", .command)),
+            key("terminal.newWindow", L("New Window"), "Terminal", terminal, "terminal", KeyCombo("N", .command)),
+            key("terminal.newTab", L("New Tab"), "Terminal", terminal, "plus.rectangle", KeyCombo("T", .command)),
+            key("terminal.clear", L("Clear Scrollback"), "Terminal", terminal, "clear", KeyCombo("K", .command)),
 
-            key("xcode.build", "Build", "Xcode", xcode, "hammer", KeyCombo("B", .command)),
-            key("xcode.run", "Run", "Xcode", xcode, "play.fill", KeyCombo("R", .command)),
-            key("xcode.stop", "Stop", "Xcode", xcode, "stop.fill", KeyCombo(".", .command)),
-            key("xcode.test", "Test", "Xcode", xcode, "checkmark.diamond", KeyCombo("U", .command)),
-            key("xcode.cleanBuild", "Clean Build Folder", "Xcode", xcode, "trash", KeyCombo("K", [.command, .shift])),
+            key("xcode.build", L("Build"), "Xcode", xcode, "hammer", KeyCombo("B", .command)),
+            key("xcode.run", L("Run"), "Xcode", xcode, "play.fill", KeyCombo("R", .command)),
+            key("xcode.stop", L("Stop"), "Xcode", xcode, "stop.fill", KeyCombo(".", .command)),
+            key("xcode.test", L("Test"), "Xcode", xcode, "checkmark.diamond", KeyCombo("U", .command)),
+            key("xcode.cleanBuild", L("Clean Build Folder"), "Xcode", xcode, "trash", KeyCombo("K", [.command, .shift])),
 
-            AppCommand(id: "music.playPause", title: "Play / Pause", appName: "Music", bundleIdentifier: "com.apple.Music",
+            AppCommand(id: "music.playPause", title: L("Play / Pause"), appName: "Music", bundleIdentifier: "com.apple.Music",
                        symbol: "playpause.fill", action: .appleScript("tell application \"Music\" to playpause")),
-            AppCommand(id: "music.nextTrack", title: "Next Track", appName: "Music", bundleIdentifier: "com.apple.Music",
+            AppCommand(id: "music.nextTrack", title: L("Next Track"), appName: "Music", bundleIdentifier: "com.apple.Music",
                        symbol: "forward.fill", action: .appleScript("tell application \"Music\" to next track")),
 
-            key("system.lockScreen", "Lock Screen", "System", nil, "lock.fill", KeyCombo("Q", [.command, .control])),
-            key("system.screenshotArea", "Screenshot Area", "System", nil, "camera.viewfinder", KeyCombo("4", [.command, .shift])),
-            key("system.spotlight", "Spotlight", "System", nil, "magnifyingglass", KeyCombo("Space", .command)),
-            AppCommand(id: "system.screenshotToolbar", title: "Screenshot Toolbar", appName: "System", bundleIdentifier: nil,
+            key("system.lockScreen", L("Lock Screen"), L("System"), nil, "lock.fill", KeyCombo("Q", [.command, .control])),
+            key("system.screenshotArea", L("Screenshot Area"), L("System"), nil, "camera.viewfinder", KeyCombo("4", [.command, .shift])),
+            key("system.spotlight", L("Spotlight"), L("System"), nil, "magnifyingglass", KeyCombo("Space", .command)),
+            AppCommand(id: "system.screenshotToolbar", title: L("Screenshot Toolbar"), appName: L("System"), bundleIdentifier: nil,
                        symbol: "camera.on.rectangle", action: .openApp("com.apple.screenshot.launcher")),
-            AppCommand(id: "system.missionControl", title: "Mission Control", appName: "System", bundleIdentifier: nil,
+            AppCommand(id: "system.missionControl", title: L("Mission Control"), appName: L("System"), bundleIdentifier: nil,
                        symbol: "rectangle.3.group", action: .openApp("com.apple.exposelauncher")),
-            AppCommand(id: "system.emptyTrash", title: "Empty Trash", appName: "System", bundleIdentifier: finder,
+            AppCommand(id: "system.emptyTrash", title: L("Empty Trash"), appName: L("System"), bundleIdentifier: finder,
                        symbol: "trash", action: .appleScript("tell application \"Finder\" to empty trash")),
         ])
-    }()
+    }
 }

@@ -12,14 +12,15 @@ struct LayoutComponent: Identifiable, Hashable {
     static func == (a: LayoutComponent, b: LayoutComponent) -> Bool { a.id == b.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
 
-    static let library: [LayoutComponent] = {
+    /// Computed so titles follow the interface language.
+    static var library: [LayoutComponent] {
         var list: [LayoutComponent] = [
-            LayoutComponent(id: "button", title: "Empty Button", symbol: "rectangle") {
-                TouchBarItemConfig(title: "Button", icon: .symbol("star"), action: .none)
+            LayoutComponent(id: "button", title: L("Empty Button"), symbol: "rectangle") {
+                TouchBarItemConfig(title: L("Button"), icon: .symbol("star"), action: .none)
             },
-            LayoutComponent(id: "smallSpace", title: "Small Space", symbol: "arrow.left.and.right") { .space(.smallSpace) },
-            LayoutComponent(id: "largeSpace", title: "Large Space", symbol: "arrow.left.and.right.square") { .space(.largeSpace) },
-            LayoutComponent(id: "flexibleSpace", title: "Flexible Space", symbol: "arrow.left.and.line.vertical.and.arrow.right") { .space(.flexibleSpace) },
+            LayoutComponent(id: "smallSpace", title: L("Small Space"), symbol: "arrow.left.and.right") { .space(.smallSpace) },
+            LayoutComponent(id: "largeSpace", title: L("Large Space"), symbol: "arrow.left.and.right.square") { .space(.largeSpace) },
+            LayoutComponent(id: "flexibleSpace", title: L("Flexible Space"), symbol: "arrow.left.and.line.vertical.and.arrow.right") { .space(.flexibleSpace) },
         ]
         for descriptor in ActionRegistry.descriptors {
             list.append(LayoutComponent(id: "action.\(descriptor.kind.rawValue)", title: descriptor.title, symbol: descriptor.symbol) {
@@ -27,7 +28,7 @@ struct LayoutComponent: Identifiable, Hashable {
             })
         }
         return list
-    }()
+    }
 
     static func named(_ id: String) -> LayoutComponent? { library.first { $0.id == id } }
 }

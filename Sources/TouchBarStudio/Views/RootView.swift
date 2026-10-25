@@ -48,7 +48,7 @@ struct Banner: View {
                 .foregroundStyle(style == .error ? .red : .orange)
             Text(text).textSelection(.enabled)
             Spacer()
-            Button("Dismiss", action: dismiss).buttonStyle(.borderless)
+            Button(L("Dismiss"), action: dismiss).buttonStyle(.borderless)
         }
         .padding(10)
         .background((style == .error ? Color.red : Color.orange).opacity(0.12))

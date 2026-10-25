@@ -68,6 +68,21 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 - **Dashboard, Actions, Application Profiles, Presets, Settings** sections; menu bar extra;
   native menus (Layout, Touch Bar, ⌘1–⌘6 navigation); light and dark mode.
 
+## Interface language
+
+English and Russian, switchable in **Settings › Language** (System / English / Русский)
+without restarting. "System" follows the first preferred language in macOS. Standard
+menus and panels supplied by macOS (Edit, Window, open/save dialogs) follow
+`AppleLanguages` and switch after a restart; Settings offers a **Restart Now** button.
+
+Translations are Swift dictionaries in `Sources/TouchBarStudioCore/Localization/`, keyed
+by the English text and accessed with `L("…")` / `Lp("%d items", n)` (Russian plural
+rules). There are no resource bundles, so the app behaves the same as a `.app`, under
+`swift run` and in Xcode. `LocalizationTests` scans the sources and fails on a missing,
+unused or placeholder-mismatched translation, and checks that the built-in presets fit
+in Russian too. Built-in preset names and button titles are localized when a profile is
+created from them; buttons you've already created keep the titles you gave them.
+
 ## Security and permissions
 
 - **Accessibility** is only needed for keyboard-shortcut and media-key actions. It is never
@@ -101,7 +116,7 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 ```sh
 scripts/build-app.sh            # release build → build/TouchBar Studio.app
 scripts/build-app.sh debug      # debug build
-scripts/test.sh                 # unit tests (Swift Testing, 41 tests)
+scripts/test.sh                 # unit tests (Swift Testing, 51 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```

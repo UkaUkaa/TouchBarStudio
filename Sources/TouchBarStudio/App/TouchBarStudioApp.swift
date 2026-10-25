@@ -45,6 +45,7 @@ struct TouchBarStudioApp: App {
         Window("TouchBar Studio", id: "main") {
             RootView()
                 .environment(delegate.model)
+                .localized(delegate.model)
                 .frame(minWidth: 980, minHeight: 640)
         }
         .defaultSize(width: 1180, height: 760)
@@ -53,12 +54,14 @@ struct TouchBarStudioApp: App {
         Settings {
             SettingsView()
                 .environment(delegate.model)
-                .frame(width: 640, height: 620)
+                .localized(delegate.model)
+                .frame(width: 640, height: 680)
         }
 
         MenuBarExtra {
             MenuBarContent()
                 .environment(delegate.model)
+                .localized(delegate.model)
         } label: {
             MenuBarLabel(model: delegate.model)
         }
@@ -69,14 +72,16 @@ struct AppCommands: Commands {
     let model: AppModel
 
     var body: some Commands {
+        // Reading the language registers a dependency, so menus rebuild when it changes.
+        let _ = model.language
         // Undo/redo go to the focused text field when editing text, otherwise to the layout editor.
         CommandGroup(replacing: .undoRedo) {
-            Button("Undo") {
+            Button(L("Undo")) {
                 if NSApp.keyWindow?.firstResponder is NSText { NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) }
                 else { model.editor.undo() }
             }
             .keyboardShortcut("z")
-            Button("Redo") {
+            Button(L("Redo")) {
                 if NSApp.keyWindow?.firstResponder is NSText { NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) }
                 else { model.editor.redo() }
             }
@@ -88,26 +93,26 @@ struct AppCommands: Commands {
                     .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
             }
         }
-        CommandMenu("Layout") {
-            Button("Add Button") { model.section = .editor; model.editor.add(LayoutComponent.named("button")!) }
+        CommandMenu(L("Layout")) {
+            Button(L("Add Button")) { model.section = .editor; model.editor.add(LayoutComponent.named("button")!) }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
-            Button("Duplicate") { if let id = model.editor.selection { model.editor.duplicate(id) } }
+            Button(L("Duplicate")) { if let id = model.editor.selection { model.editor.duplicate(id) } }
                 .keyboardShortcut("d")
-            Button("Delete") { if let id = model.editor.selection { model.editor.delete(id) } }
+            Button(L("Delete")) { if let id = model.editor.selection { model.editor.delete(id) } }
                 .keyboardShortcut(.delete, modifiers: .command)
             Divider()
-            Button("Move Left") { model.editor.moveSelection(by: -1) }
+            Button(L("Move Left")) { model.editor.moveSelection(by: -1) }
                 .keyboardShortcut("[", modifiers: [.command, .option])
-            Button("Move Right") { model.editor.moveSelection(by: 1) }
+            Button(L("Move Right")) { model.editor.moveSelection(by: 1) }
                 .keyboardShortcut("]", modifiers: [.command, .option])
             Divider()
-            Button("Save Layout") { model.editor.save() }
+            Button(L("Save Layout")) { model.editor.save() }
                 .keyboardShortcut("s")
         }
-        CommandMenu("Touch Bar") {
-            Button("Show Layout on Touch Bar") { model.showTouchBar() }
+        CommandMenu(L("Touch Bar")) {
+            Button(L("Show Layout on Touch Bar")) { model.showTouchBar() }
                 .keyboardShortcut("t", modifiers: [.command, .option])
-            Button("Hide Layout from Touch Bar") { model.hideTouchBar() }
+            Button(L("Hide Layout from Touch Bar")) { model.hideTouchBar() }
         }
     }
 }
@@ -133,27 +138,36 @@ struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Open TouchBar Studio") {
+        Button(L("Open TouchBar Studio")) {
             openWindow(id: "main")
             NSApp.activate()
         }
         Divider()
-        Text("On Touch Bar: \(model.config.profile(id: model.displayedProfileID ?? model.config.defaultProfileID)?.name ?? "–")")
-        Menu("Show Profile") {
+        Text(L("On Touch Bar: %@", model.config.profile(id: model.displayedProfileID ?? model.config.defaultProfileID)?.name ?? "–"))
+        Menu(L("Show Profile")) {
             ForEach(model.config.profiles) { profile in
                 Button(profile.name) { model.config.settings.manualProfileID = profile.id }
             }
         }
         if model.providerShowsOverOtherApps {
-            Toggle("Switch Profiles Automatically", isOn: Binding(
+            Toggle(L("Switch Profiles Automatically"), isOn: Binding(
                 get: { model.config.settings.autoSwitchProfiles },
                 set: { model.config.settings.autoSwitchProfiles = $0 }))
         }
-        Button(model.touchBarHidden ? "Show Layout on Touch Bar" : "Hide Layout from Touch Bar") {
+        Button(model.touchBarHidden ? L("Show Layout on Touch Bar") : L("Hide Layout from Touch Bar")) {
             model.touchBarHidden ? model.showTouchBar() : model.hideTouchBar()
         }
         Divider()
-        Button("Quit TouchBar Studio") { NSApp.terminate(nil) }
+        Button(L("Quit TouchBar Studio")) { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+}
+
+extension View {
+    /// Rebuilds the view tree when the interface language changes (texts come from `L()`,
+    /// which SwiftUI can't observe) and sets the locale for dates and numbers.
+    func localized(_ model: AppModel) -> some View {
+        environment(\.locale, model.language.locale)
+            .id(model.language)
     }
 }

@@ -20,7 +20,7 @@ final class HotKeyCenter {
         var failures: [UUID: String] = [:]
         for entry in entries {
             guard entry.combo.isValid, !entry.combo.modifiers.isEmpty else {
-                failures[entry.itemID] = "A hotkey needs at least one modifier key."
+                failures[entry.itemID] = L("A hotkey needs at least one modifier key.")
                 continue
             }
             let hotKeyID = EventHotKeyID(signature: OSType(0x5442_5374), id: nextID) // 'TBSt'
@@ -31,7 +31,7 @@ final class HotKeyCenter {
                 registered[nextID] = (ref, entry.itemID)
                 nextID += 1
             } else {
-                failures[entry.itemID] = "\(entry.combo.displayString) is already used by another app or the system."
+                failures[entry.itemID] = L("%@ is already used by another app or the system.", entry.combo.displayString)
             }
         }
         return failures

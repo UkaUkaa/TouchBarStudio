@@ -131,34 +131,34 @@ public final class ActionExecutor {
     public func validate(_ action: ActionConfig) throws {
         func nonEmpty(_ s: String?, _ what: String) throws -> String {
             let v = (s ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !v.isEmpty else { throw ActionError.invalidConfiguration("\(what) is empty.") }
+            guard !v.isEmpty else { throw ActionError.invalidConfiguration(L("%@ is empty.", what)) }
             return v
         }
         switch action.kind {
         case .none: throw ActionError.noAction
-        case .openApplication: _ = try nonEmpty(action.bundleIdentifier, "Application")
+        case .openApplication: _ = try nonEmpty(action.bundleIdentifier, L("Application"))
         case .openURL:
-            let s = try nonEmpty(action.url, "URL")
+            let s = try nonEmpty(action.url, L("URL"))
             guard let url = URL(string: s), let scheme = url.scheme, !scheme.isEmpty else {
-                throw ActionError.invalidConfiguration("“\(s)” is not a valid URL.")
+                throw ActionError.invalidConfiguration(L("“%@” is not a valid URL.", s))
             }
-            if scheme.lowercased() == "javascript" { throw ActionError.invalidConfiguration("javascript: URLs are not allowed.") }
+            if scheme.lowercased() == "javascript" { throw ActionError.invalidConfiguration(L("javascript: URLs are not allowed.")) }
             if ["http", "https"].contains(scheme.lowercased()), url.host == nil || url.host!.isEmpty {
-                throw ActionError.invalidConfiguration("“\(s)” has no host.")
+                throw ActionError.invalidConfiguration(L("“%@” has no host.", s))
             }
-        case .openFile: _ = try nonEmpty(action.path, "Path")
+        case .openFile: _ = try nonEmpty(action.path, L("Path"))
         case .keyboardShortcut:
-            guard let combo = action.keyCombo, combo.isValid else { throw ActionError.invalidConfiguration("No valid key combination recorded.") }
-        case .copyText: _ = try nonEmpty(action.text, "Text")
-        case .appleScript: _ = try nonEmpty(action.script, "Script")
-        case .shellCommand: _ = try nonEmpty(action.script, "Command")
+            guard let combo = action.keyCombo, combo.isValid else { throw ActionError.invalidConfiguration(L("No valid key combination recorded.")) }
+        case .copyText: _ = try nonEmpty(action.text, L("Text"))
+        case .appleScript: _ = try nonEmpty(action.script, L("Script"))
+        case .shellCommand: _ = try nonEmpty(action.script, L("Command"))
         case .appCommand:
-            let id = try nonEmpty(action.appCommandID, "Command")
+            let id = try nonEmpty(action.appCommandID, L("Command"))
             guard catalog.command(id: id) != nil else { throw ActionError.unknownAppCommand(id) }
         case .mediaKey:
-            guard action.mediaKey != nil else { throw ActionError.invalidConfiguration("No media key selected.") }
+            guard action.mediaKey != nil else { throw ActionError.invalidConfiguration(L("No media key selected.")) }
         case .sequence:
-            guard let steps = action.steps, !steps.isEmpty else { throw ActionError.invalidConfiguration("Sequence has no steps.") }
+            guard let steps = action.steps, !steps.isEmpty else { throw ActionError.invalidConfiguration(L("Sequence has no steps.")) }
         }
     }
 
@@ -198,7 +198,7 @@ public final class ActionExecutor {
 
         case .copyText:
             services.copyToPasteboard(action.text!)
-            return "Copied to clipboard"
+            return L("Copied to clipboard")
 
         case .appleScript:
             guard policy.allowAppleScript else { throw ActionError.appleScriptDisabled }

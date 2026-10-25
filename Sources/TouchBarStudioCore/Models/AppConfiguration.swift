@@ -22,6 +22,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
     /// Experimental mode: keep the system Control Strip and a close button.
     public var keepControlStrip: Bool
     public var enableGlobalHotKeys: Bool
+    public var language: AppLanguage
 
     public init(
         providerKind: TouchBarProviderKind = .application,
@@ -31,7 +32,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         allowAppleScript: Bool = true,
         shellTimeoutSeconds: Int = 30,
         keepControlStrip: Bool = true,
-        enableGlobalHotKeys: Bool = true
+        enableGlobalHotKeys: Bool = true,
+        language: AppLanguage = .system
     ) {
         self.providerKind = providerKind
         self.autoSwitchProfiles = autoSwitchProfiles
@@ -41,11 +43,12 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.shellTimeoutSeconds = shellTimeoutSeconds
         self.keepControlStrip = keepControlStrip
         self.enableGlobalHotKeys = enableGlobalHotKeys
+        self.language = language
     }
 
     enum CodingKeys: String, CodingKey {
         case providerKind, autoSwitchProfiles, manualProfileID, allowShellCommands, allowAppleScript
-        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys
+        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language
     }
 
     public init(from decoder: Decoder) throws {
@@ -59,6 +62,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         shellTimeoutSeconds = try c.decodeIfPresent(Int.self, forKey: .shellTimeoutSeconds) ?? d.shellTimeoutSeconds
         keepControlStrip = try c.decodeIfPresent(Bool.self, forKey: .keepControlStrip) ?? d.keepControlStrip
         enableGlobalHotKeys = try c.decodeIfPresent(Bool.self, forKey: .enableGlobalHotKeys) ?? d.enableGlobalHotKeys
+        language = (try? c.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? d.language
     }
 }
 
@@ -99,7 +103,7 @@ public struct AppConfiguration: Codable, Hashable, Sendable {
     /// Repairs invariants: at least one profile exists and the default/manual IDs point at real profiles.
     public mutating func normalize() {
         if profiles.isEmpty {
-            let p = Profile(name: "Default")
+            let p = Profile(name: L("Default"))
             profiles = [p]
             defaultProfileID = p.id
         }
@@ -118,7 +122,7 @@ public struct AppConfiguration: Codable, Hashable, Sendable {
     public func profile(id: UUID) -> Profile? { profiles.first { $0.id == id } }
 
     public static func makeDefault() -> AppConfiguration {
-        let base = BuiltInPresets.productivity.makeProfile(named: "Default")
+        let base = BuiltInPresets.productivity.makeProfile(named: L("Default"))
         let finder = BuiltInPresets.finder.makeProfile(named: "Finder", bundleIdentifiers: ["com.apple.finder"])
         let safari = BuiltInPresets.browser.makeProfile(named: "Safari", bundleIdentifiers: ["com.apple.Safari"])
         return AppConfiguration(profiles: [base, finder, safari], defaultProfileID: base.id)
@@ -131,7 +135,7 @@ public enum ConfigurationError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .unsupportedSchemaVersion(let v):
-            "The configuration was written by a newer version of TouchBar Studio (schema \(v))."
+            L("The configuration was written by a newer version of TouchBar Studio (schema %d).", v)
         }
     }
 }

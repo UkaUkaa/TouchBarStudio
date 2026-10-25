@@ -16,17 +16,17 @@ protocol TouchBarProvider: AnyObject {
 extension TouchBarProviderKind {
     var title: String {
         switch self {
-        case .application: "Standard (public API)"
-        case .systemModalExperimental: "Over all apps (experimental)"
+        case .application: L("Standard (public API)")
+        case .systemModalExperimental: L("Over all apps (experimental)")
         }
     }
 
     var explanation: String {
         switch self {
         case .application:
-            "Uses AppKit's documented NSTouchBar API. Your layout appears on the Touch Bar while TouchBar Studio is the active app. macOS does not let a normal app change other apps' Touch Bars, so this mode cannot follow the frontmost app."
+            L("Uses AppKit's documented NSTouchBar API. Your layout appears on the Touch Bar while TouchBar Studio is the active app. macOS does not let a normal app change other apps' Touch Bars, so this mode cannot follow the frontmost app.")
         case .systemModalExperimental:
-            "Uses an undocumented macOS API (the same one used by Pock, MTMR and similar tools) to show your layout over every app, which also enables automatic per-app profiles. Apple does not support this API: it may stop working in a future macOS update. Verified on this Mac running macOS 27.0.1."
+            L("Uses an undocumented macOS API (the same one used by Pock, MTMR and similar tools) to show your layout over every app, which also enables automatic per-app profiles. Apple does not support this API: it may stop working in a future macOS update. Verified on this Mac running macOS 27.0.1.")
         }
     }
 }

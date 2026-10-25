@@ -15,10 +15,10 @@ struct ActionEditor: View {
     }
 
     var body: some View {
-        Picker("Type", selection: Binding(
+        Picker(L("Type"), selection: Binding(
             get: { action.kind },
             set: { kind in if kind != action.kind { action = ActionRegistry.template(for: kind) } })) {
-            Text("None").tag(ActionKind.none)
+            Text(L("None")).tag(ActionKind.none)
             ForEach(ActionRegistry.descriptors.filter { depth < 2 || $0.kind != .sequence }) { d in
                 Label(d.title, systemImage: d.symbol).tag(d.kind)
             }
@@ -36,13 +36,13 @@ struct ActionEditor: View {
         case .none:
             EmptyView()
         case .openApplication:
-            BundleIdentifierField(label: "Application", bundleIdentifier: field(\.bundleIdentifier, default: ""))
+            BundleIdentifierField(label: L("Application"), bundleIdentifier: field(\.bundleIdentifier, default: ""))
         case .openURL:
-            TextField("URL", text: field(\.url, default: ""), prompt: Text("https://example.com"))
+            TextField(L("URL"), text: field(\.url, default: ""), prompt: Text(L("https://example.com")))
         case .openFile:
             HStack {
-                TextField("Path", text: field(\.path, default: ""), prompt: Text("~/Documents"))
-                Button("Choose…") {
+                TextField(L("Path"), text: field(\.path, default: ""), prompt: Text(L("~/Documents")))
+                Button(L("Choose…")) {
                     let panel = NSOpenPanel()
                     panel.canChooseDirectories = true
                     panel.canChooseFiles = true
@@ -52,27 +52,27 @@ struct ActionEditor: View {
                 }
             }
         case .keyboardShortcut:
-            LabeledContent("Keys") {
+            LabeledContent(L("Keys")) {
                 KeyRecorder(combo: Binding(get: { action.keyCombo }, set: { action.keyCombo = $0 }))
             }
-            BundleIdentifierField(label: "Send to app", bundleIdentifier: field(\.targetBundleIdentifier, default: ""), allowsEmpty: true)
+            BundleIdentifierField(label: L("Send to app"), bundleIdentifier: field(\.targetBundleIdentifier, default: ""), allowsEmpty: true)
             if (action.targetBundleIdentifier ?? "").isEmpty && (associatedBundleIdentifier ?? "").isEmpty && !model.providerShowsOverOtherApps {
-                Label("No target app: the keys go to the frontmost app. With the standard integration that is TouchBar Studio itself when you tap the button, so pick a target app.",
+                Label(L("No target app: the keys go to the frontmost app. With the standard integration that is TouchBar Studio itself when you tap the button, so pick a target app."),
                       systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange)
             }
         case .copyText:
-            TextField("Text", text: field(\.text, default: ""), axis: .vertical).lineLimit(2...6)
+            TextField(L("Text"), text: field(\.text, default: ""), axis: .vertical).lineLimit(2...6)
         case .appleScript:
             scriptEditor(placeholder: "tell application \"Finder\" to activate")
         case .shellCommand:
             scriptEditor(placeholder: "open ~/Projects")
             if !model.config.settings.allowShellCommands {
-                Label("Shell commands are disabled. Enable them in Settings › Security.", systemImage: "lock")
+                Label(L("Shell commands are disabled. Enable them in Settings › Security."), systemImage: "lock")
                     .font(.caption).foregroundStyle(.orange)
             }
         case .appCommand:
-            Picker("Command", selection: field(\.appCommandID, default: "")) {
+            Picker(L("Command"), selection: field(\.appCommandID, default: "")) {
                 ForEach(AppCommandCatalog.standard.groupedByApp, id: \.app) { group in
                     Section(group.app) {
                         ForEach(group.commands) { cmd in Text("\(group.app): \(cmd.title)").tag(cmd.id) }
@@ -80,10 +80,10 @@ struct ActionEditor: View {
                 }
             }
             if let cmd = AppCommandCatalog.standard.command(id: action.appCommandID ?? "") {
-                Text("Runs: \(cmd.action.summary)").font(.caption).foregroundStyle(.secondary)
+                Text(L("Runs: %@", cmd.action.summary)).font(.caption).foregroundStyle(.secondary)
             }
         case .mediaKey:
-            Picker("Key", selection: field(\.mediaKey, default: .playPause)) {
+            Picker(L("Key"), selection: field(\.mediaKey, default: .playPause)) {
                 ForEach(MediaKey.allCases) { Label($0.title, systemImage: $0.symbolName).tag($0) }
             }
         case .sequence:
@@ -98,7 +98,7 @@ struct ActionEditor: View {
                 .frame(minHeight: 70, maxHeight: 160)
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.separator))
             if (action.script ?? "").isEmpty {
-                Text("e.g. \(placeholder)").font(.caption).foregroundStyle(.secondary)
+                Text(L("e.g. %@", placeholder)).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -107,14 +107,14 @@ struct ActionEditor: View {
         let approved = model.isApproved(action)
         return VStack(alignment: .leading, spacing: 6) {
             if approved {
-                Label("Approved. Editing the script requires approving it again.", systemImage: "checkmark.shield")
+                Label(L("Approved. Editing the script requires approving it again."), systemImage: "checkmark.shield")
                     .foregroundStyle(.green).font(.callout)
             } else {
-                Label("This action runs code on your Mac and won't run until you approve the exact text above. Approve only scripts you wrote or fully understand.",
+                Label(L("This action runs code on your Mac and won't run until you approve the exact text above. Approve only scripts you wrote or fully understand."),
                       systemImage: "exclamationmark.shield")
                     .foregroundStyle(.orange).font(.callout)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Approve Script") { model.approve(action) }
+                Button(L("Approve Script")) { model.approve(action) }
             }
         }
     }
@@ -122,20 +122,20 @@ struct ActionEditor: View {
     private var sequenceEditor: some View {
         let steps = action.steps ?? []
         return VStack(alignment: .leading, spacing: 8) {
-            Stepper("Delay between steps: \(action.delayMilliseconds ?? 0) ms",
+            Stepper(L("Delay between steps: %d ms", action.delayMilliseconds ?? 0),
                     value: field(\.delayMilliseconds, default: 0), in: 0...5000, step: 50)
             ForEach(Array(steps.enumerated()), id: \.offset) { index, _ in
                 GroupBox {
                     VStack(alignment: .leading) {
                         HStack {
-                            Text("Step \(index + 1)").font(.caption.weight(.semibold))
+                            Text(L("Step %d", index + 1)).font(.caption.weight(.semibold))
                             Spacer()
                             Button { moveStep(index, by: -1) } label: { Image(systemName: "arrow.up") }
-                                .disabled(index == 0).help("Move up")
+                                .disabled(index == 0).help(L("Move up"))
                             Button { moveStep(index, by: 1) } label: { Image(systemName: "arrow.down") }
-                                .disabled(index == steps.count - 1).help("Move down")
+                                .disabled(index == steps.count - 1).help(L("Move down"))
                             Button(role: .destructive) { action.steps?.remove(at: index) } label: { Image(systemName: "trash") }
-                                .help("Remove step")
+                                .help(L("Remove step"))
                         }
                         .buttonStyle(.borderless)
                         AnyView(ActionEditor(
@@ -147,7 +147,7 @@ struct ActionEditor: View {
                     }
                 }
             }
-            Menu("Add Step") {
+            Menu(L("Add Step")) {
                 ForEach(ActionRegistry.descriptors.filter { $0.kind != .sequence || depth < 1 }) { d in
                     Button(d.title) { action.steps = steps + [ActionRegistry.template(for: d.kind)] }
                 }
@@ -169,7 +169,7 @@ struct ActionEditor: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 Text(problem.localizedDescription).font(.caption).fixedSize(horizontal: false, vertical: true)
                 if problem == .accessibilityPermissionRequired {
-                    Button("Grant…") { model.section = .settings }.buttonStyle(.link).font(.caption)
+                    Button(L("Grant…")) { model.section = .settings }.buttonStyle(.link).font(.caption)
                 }
             }
         }
@@ -181,7 +181,7 @@ struct ActionEditor: View {
                     testing = false
                 }
             } label: {
-                Label("Test Action", systemImage: "play.circle")
+                Label(L("Test Action"), systemImage: "play.circle")
             }
             .disabled(testing)
             if testing { ProgressView().controlSize(.small) }
