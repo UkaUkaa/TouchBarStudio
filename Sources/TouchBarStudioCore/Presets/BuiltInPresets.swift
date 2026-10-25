@@ -12,7 +12,7 @@ public enum BuiltInPresets {
         id: id(1), name: "Developer", summary: "Terminal, Xcode build/run/stop, VS Code and GitHub.",
         symbol: "chevron.left.forwardslash.chevron.right",
         items: [
-            .button("Terminal", symbol: "terminal", action: .openApp("com.apple.Terminal")),
+            .button("Terminal", symbol: "terminal", action: .openApp("com.apple.Terminal"), showsTitle: false),
             .button("VS Code", symbol: "curlybraces", color: .blue, action: .openApp("com.microsoft.VSCode"), showsTitle: false),
             .space(.smallSpace),
             .button("Build", symbol: "hammer", action: .command("xcode.build")),
@@ -41,7 +41,7 @@ public enum BuiltInPresets {
     )
 
     public static let writer = Preset(
-        id: id(3), name: "Writer", summary: "TextEdit, Notes, Dictionary, formatting and typographic characters.",
+        id: id(3), name: "Writer", summary: "TextEdit, Notes, Dictionary, formatting and an em dash.",
         symbol: "pencil.and.outline",
         items: [
             .button("TextEdit", symbol: "doc.text", action: .openApp("com.apple.TextEdit"), showsTitle: false),
@@ -53,7 +53,6 @@ public enum BuiltInPresets {
             .button("Underline", symbol: "underline", action: .shortcut(KeyCombo("U", .command)), showsTitle: false),
             .space(.smallSpace),
             .button("—", action: .copy("—")),
-            .button("« »", action: .copy("«»")),
         ],
         suggestedBundleIdentifiers: ["com.apple.TextEdit"]
     )
@@ -62,8 +61,8 @@ public enum BuiltInPresets {
         id: id(4), name: "Productivity", summary: "Calendar, Mail, Reminders, Notes, screenshots and lock screen.",
         symbol: "checklist",
         items: [
-            .button("Calendar", symbol: "calendar", action: .openApp("com.apple.iCal")),
-            .button("Mail", symbol: "envelope", action: .openApp("com.apple.mail")),
+            .button("Calendar", symbol: "calendar", action: .openApp("com.apple.iCal"), showsTitle: false),
+            .button("Mail", symbol: "envelope", action: .openApp("com.apple.mail"), showsTitle: false),
             .button("Reminders", symbol: "checklist", action: .openApp("com.apple.reminders"), showsTitle: false),
             .button("Notes", symbol: "note.text", color: .yellow, action: .openApp("com.apple.Notes")),
             .space(.smallSpace),
@@ -77,10 +76,10 @@ public enum BuiltInPresets {
         id: id(5), name: "Creative Work", summary: "Photos, Preview, Color Meter, screenshots and music controls.",
         symbol: "paintpalette",
         items: [
-            .button("Photos", symbol: "photo.on.rectangle", action: .openApp("com.apple.Photos")),
+            .button("Photos", symbol: "photo.on.rectangle", action: .openApp("com.apple.Photos"), showsTitle: false),
             .button("Preview", symbol: "eye", action: .openApp("com.apple.Preview")),
             .button("Color Meter", symbol: "eyedropper", color: .purple, action: .openApp("com.apple.DigitalColorMeter"), showsTitle: false),
-            .button("Area", symbol: "camera.viewfinder", action: .command("system.screenshotArea")),
+            .button("Screenshot Area", symbol: "camera.viewfinder", action: .command("system.screenshotArea"), showsTitle: false),
             .space(.smallSpace),
             .button("Previous", symbol: "backward.fill", action: .media(.previous), showsTitle: false),
             .button("Play/Pause", symbol: "playpause.fill", color: .pink, action: .media(.playPause), showsTitle: false),

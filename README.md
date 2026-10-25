@@ -38,7 +38,12 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Experimental mode: layout shown while Finder / Safari / Terminal are frontmost | ✅ captured |
 | Experimental mode: automatic switching (Finder → Finder profile, Safari → Safari profile, Terminal → default) | ✅ captured |
 | Normal Touch Bar comes back when the app quits | ✅ captured |
-| Taps in the full app (standard and experimental modes), keyboard-shortcut actions with Accessibility granted, the editor UI | See "Manual verification" below |
+| Full app, standard mode: physical tap on the Calculator button opens Calculator and is logged | ✅ confirmed by the user |
+| Full app, experimental mode: in Finder, tapping "Downloads" opens the folder | ✅ confirmed by the user |
+| Editor: drag-and-drop reorder, title edit, ⌘Z | ✅ confirmed by the user |
+| Layout and mode persist after restarting the app (config unchanged, layout shown over Terminal) | ✅ captured |
+| Keyboard-shortcut and media-key actions with Accessibility granted to the bundled app | ⚠️ Not verified on hardware (permission not granted during testing). Covered by unit tests with mocked services only. |
+| AppleScript and shell actions from a Touch Bar tap | ⚠️ Shell runner verified by unit tests against real `/bin/zsh`; not tapped on hardware |
 
 ## Features
 
@@ -148,8 +153,10 @@ Toolchain notes (Command Line Tools only):
   **Touch Bar › Show Layout on Touch Bar** (also in the menu bar extra).
 - In standard mode, a keyboard-shortcut button without a target app sends its keys to
   TouchBar Studio itself (the editor warns about this).
-- Item widths in the preview are estimates calibrated on a 13" Touch Bar; macOS hides
-  items that don't fit.
+- Item widths in the preview are estimates calibrated against hardware captures of a 13"
+  Touch Bar (icon-only button 72 pt, close button 60 pt, collapsed Control Strip 306 pt);
+  macOS hides items that don't fit. A unit test checks that every built-in preset fits in
+  the tightest layout (experimental mode with the Control Strip and close button).
 - The brightness and keyboard-backlight media keys aren't offered: they can't be posted
   reliably on Apple-silicon Macs.
 - App commands for apps that aren't installed (e.g. Xcode on the test machine) report

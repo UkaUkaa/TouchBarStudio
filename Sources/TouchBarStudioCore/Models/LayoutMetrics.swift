@@ -9,7 +9,7 @@ public enum LayoutMetrics {
     /// Collapsed system Control Strip.
     public static let controlStripWidth: Double = 306
     /// Close button shown by the experimental system-modal mode when the Control Strip is kept.
-    public static let closeButtonWidth: Double = 64
+    public static let closeButtonWidth: Double = 60
     public static let itemSpacing: Double = 8
 
     public static func availableWidth(showsControlStrip: Bool, showsCloseButton: Bool = false) -> Double {
@@ -22,9 +22,10 @@ public enum LayoutMetrics {
         case .largeSpace: return 32
         case .flexibleSpace: return 24
         case .button:
+            // Measured on hardware: icon-only 72 pt; "Mail" with icon 89 pt; "Notes" 90 pt; "Calendar" 107 pt.
             let title = item.showsTitle ? item.title : ""
-            if title.isEmpty { return 64 }
-            return max(64, Double(title.count) * 7.6 + (item.icon.source == .none ? 0 : 26) + 26)
+            if title.isEmpty { return 72 }
+            return max(72, Double(title.count) * 6.5 + (item.icon.source == .none ? 0 : 26) + 36)
         }
     }
 
