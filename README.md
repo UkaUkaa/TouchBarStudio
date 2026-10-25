@@ -34,6 +34,7 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Minimal proof app: custom button with icon and label appears on the physical Touch Bar | ✅ captured |
 | Physical finger tap triggers the action (opened Calculator) | ✅ confirmed by the user and by Calculator's process start time |
 | TouchBar Studio, standard mode: profile appears while the app is active | ✅ captured |
+| Standard mode after the window is closed: reactivating the app reopens the window and the layout (without a key window macOS shows an empty bar) | ✅ captured |
 | Experimental mode: layout shown while Finder / Safari / Terminal are frontmost | ✅ captured |
 | Experimental mode: automatic switching (Finder → Finder profile, Safari → Safari profile, Terminal → default) | ✅ captured |
 | Normal Touch Bar comes back when the app quits | ✅ captured |

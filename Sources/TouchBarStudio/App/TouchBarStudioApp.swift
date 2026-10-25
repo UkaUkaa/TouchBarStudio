@@ -14,9 +14,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        // The standard Touch Bar provider is found through the key window's responder
+        // chain: with no window open, macOS shows an empty bar. Bring the window back.
+        ensureMainWindow()
         // Permissions may have been granted in System Settings meanwhile.
         model.permissions.refresh()
         model.refreshTouchBar(force: true)
+    }
+
+    private func ensureMainWindow() {
+        let hasMainWindow = NSApp.windows.contains { $0.isVisible && $0.canBecomeMain }
+        if !hasMainWindow { model.openMainWindow?() }
     }
 
     // Keep running with the window closed: the menu bar item and (in experimental
@@ -48,9 +56,11 @@ struct TouchBarStudioApp: App {
                 .frame(width: 640, height: 620)
         }
 
-        MenuBarExtra("TouchBar Studio", systemImage: "rectangle.and.hand.point.up.left.filled") {
+        MenuBarExtra {
             MenuBarContent()
                 .environment(delegate.model)
+        } label: {
+            MenuBarLabel(model: delegate.model)
         }
     }
 }
@@ -99,6 +109,22 @@ struct AppCommands: Commands {
                 .keyboardShortcut("t", modifiers: [.command, .option])
             Button("Hide Layout from Touch Bar") { model.hideTouchBar() }
         }
+    }
+}
+
+/// Always-rendered menu bar label; also hands the scene's `openWindow` action to the
+/// model so AppKit code can reopen the main window.
+struct MenuBarLabel: View {
+    let model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Image(systemName: "rectangle.and.hand.point.up.left.filled")
+            .onAppear {
+                model.openMainWindow = {
+                    openWindow(id: "main")
+                }
+            }
     }
 }
 

@@ -57,6 +57,8 @@ final class AppModel {
     let apps = ApplicationProfileManager()
     let permissions = PermissionManager()
     @ObservationIgnored private var saveTask: Task<Void, Never>?
+    /// Opens the main window (provided by the SwiftUI scene).
+    @ObservationIgnored var openMainWindow: (() -> Void)?
     @ObservationIgnored lazy var editor = LayoutEditorViewModel(model: self)
 
     init(store: ConfigurationStore = ConfigurationStore(directory: ConfigurationStore.defaultDirectory())) {
