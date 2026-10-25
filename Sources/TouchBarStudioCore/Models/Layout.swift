@@ -5,6 +5,8 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case smallSpace
     case largeSpace
     case flexibleSpace
+    /// Live battery percentage and charging state. Runs its action (if any) when tapped.
+    case battery
 }
 
 public struct ButtonIcon: Codable, Hashable, Sendable {
@@ -89,6 +91,16 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
             associatedBundleIdentifier: app
         )
     }
+
+    /// Battery widget; tapping opens Battery settings by default.
+    public static func battery() -> TouchBarItemConfig {
+        TouchBarItemConfig(kind: .battery, title: L("Battery"), action: .openURL(batterySettingsURL))
+    }
+
+    public static let batterySettingsURL = "x-apple.systempreferences:com.apple.Battery-Settings.extension"
+
+    /// Items that are tapped like buttons (have an action, title, color).
+    public var isTappable: Bool { kind == .button || kind == .battery }
 
     public static func space(_ kind: ItemKind) -> TouchBarItemConfig {
         TouchBarItemConfig(kind: kind)

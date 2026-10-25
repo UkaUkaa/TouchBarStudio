@@ -21,6 +21,8 @@ public enum LayoutMetrics {
         case .smallSpace: return 8
         case .largeSpace: return 32
         case .flexibleSpace: return 24
+        // Battery icon plus "100%".
+        case .battery: return item.showsTitle ? 92 : 72
         case .button:
             // Measured on hardware: icon-only 72 pt; "Mail" with icon 89 pt; "Notes" 90 pt; "Calendar" 107 pt.
             let title = item.showsTitle ? item.title : ""

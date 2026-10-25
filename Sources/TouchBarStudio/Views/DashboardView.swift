@@ -115,7 +115,7 @@ struct DashboardView: View {
         Card(title: L("Current Layout"), symbol: "rectangle.split.3x1") {
             let profile = model.config.profile(id: model.displayedProfileID ?? model.config.defaultProfileID)
             TouchBarPreview(items: profile?.items ?? [], selection: .constant(nil), compact: true,
-                            onActivate: { item in if item.kind == .button { model.perform(item, source: L("Preview")) } })
+                            onActivate: { item in if item.isTappable { model.perform(item, source: L("Preview")) } })
             Text(L("Click a button in the preview to run its action from here. Tapping it on the physical Touch Bar does the same."))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

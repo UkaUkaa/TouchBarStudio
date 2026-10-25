@@ -4,6 +4,7 @@ import TouchBarStudioCore
 /// A drawing of the proposed layout. Deliberately labelled as a preview: it is not the
 /// physical Touch Bar, and widths are estimates.
 struct TouchBarPreview: View {
+    @Environment(AppModel.self) private var model
     var items: [TouchBarItemConfig]
     @Binding var selection: UUID?
     var compact = false
@@ -80,6 +81,12 @@ struct TouchBarPreview: View {
                 .padding(.horizontal, 12)
                 .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
                 .background(RoundedRectangle(cornerRadius: 6).fill(item.color.swiftUIColor))
+            case .battery:
+                BatteryLabel(status: model.battery.status, showsPercentage: item.showsTitle)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(batteryBackground(item)))
             case .smallSpace, .largeSpace, .flexibleSpace:
                 RoundedRectangle(cornerRadius: 4)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [3]))
@@ -94,7 +101,7 @@ struct TouchBarPreview: View {
             selection = item.id
             onActivate?(item)
         }
-        .help(item.action.summary)
+        .help(item.kind == .battery ? (model.battery.status?.accessibilityDescription ?? L("No battery")) : item.action.summary)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel(item))
         .accessibilityAddTraits(.isButton)
@@ -108,6 +115,15 @@ struct TouchBarPreview: View {
         case .smallSpace: L("Small Space")
         case .largeSpace: L("Large Space")
         case .flexibleSpace: L("Flexible Space")
+        case .battery: model.battery.status?.accessibilityDescription ?? L("No battery")
+        }
+    }
+
+    private func batteryBackground(_ item: TouchBarItemConfig) -> Color {
+        switch model.battery.status?.level {
+        case .critical: .red
+        case .low: .orange
+        default: item.color.swiftUIColor
         }
     }
 
@@ -155,6 +171,26 @@ private struct DragDropModifier: ViewModifier {
                 }
         } else {
             content
+        }
+    }
+}
+
+/// Battery icon plus percentage, as drawn on the Touch Bar.
+struct BatteryLabel: View {
+    var status: BatteryStatus?
+    var showsPercentage = true
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let status {
+                Image(systemName: status.symbolName)
+                if showsPercentage {
+                    Text(status.percentageText).font(.system(size: 13).monospacedDigit()).lineLimit(1)
+                }
+            } else {
+                Image(systemName: "powerplug")
+                if showsPercentage { Text(L("No battery")).font(.system(size: 13)).lineLimit(1) }
+            }
         }
     }
 }

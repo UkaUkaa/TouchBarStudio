@@ -4,7 +4,10 @@ import TouchBarStudioCore
 
 /// A component that can be dropped into a layout from the library.
 struct LayoutComponent: Identifiable, Hashable {
+    enum Group { case layout, widget, action }
+
     var id: String
+    var group: Group = .layout
     var title: String
     var symbol: String
     var make: @MainActor () -> TouchBarItemConfig
@@ -22,8 +25,9 @@ struct LayoutComponent: Identifiable, Hashable {
             LayoutComponent(id: "largeSpace", title: L("Large Space"), symbol: "arrow.left.and.right.square") { .space(.largeSpace) },
             LayoutComponent(id: "flexibleSpace", title: L("Flexible Space"), symbol: "arrow.left.and.line.vertical.and.arrow.right") { .space(.flexibleSpace) },
         ]
+        list.append(LayoutComponent(id: "battery", group: .widget, title: L("Battery"), symbol: "battery.75") { .battery() })
         for descriptor in ActionRegistry.descriptors {
-            list.append(LayoutComponent(id: "action.\(descriptor.kind.rawValue)", title: descriptor.title, symbol: descriptor.symbol) {
+            list.append(LayoutComponent(id: "action.\(descriptor.kind.rawValue)", group: .action, title: descriptor.title, symbol: descriptor.symbol) {
                 TouchBarItemConfig(title: descriptor.title, icon: .symbol(descriptor.symbol), action: ActionRegistry.template(for: descriptor.kind))
             })
         }

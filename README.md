@@ -42,6 +42,7 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Full app, experimental mode: in Finder, tapping "Downloads" opens the folder | ✅ confirmed by the user |
 | Editor: drag-and-drop reorder, title edit, ⌘Z | ✅ confirmed by the user |
 | Layout and mode persist after restarting the app (config unchanged, layout shown over Terminal) | ✅ captured |
+| Battery widget shows the charging icon and the real percentage (98%) on the Touch Bar | ✅ captured |
 | Keyboard-shortcut and media-key actions with Accessibility granted to the bundled app | ⚠️ Not verified on hardware (permission not granted during testing). Covered by unit tests with mocked services only. |
 | AppleScript and shell actions from a Touch Bar tap | ⚠️ Shell runner verified by unit tests against real `/bin/zsh`; not tapped on hardware |
 
@@ -65,6 +66,9 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
   save and Save as Preset.
 - **Presets**: Developer, Browser, Writer, Productivity, Creative Work (plus Finder).
   Custom presets can be imported and exported as versioned JSON.
+- **Battery widget**: live battery icon and percentage on the Touch Bar (IOKit power-source
+  API, no permission needed). Updates on every power-source change, turns orange at 20% and
+  red at 10% on battery power; tapping opens Battery settings (configurable or none).
 - **Dashboard, Actions, Application Profiles, Presets, Settings** sections; menu bar extra;
   native menus (Layout, Touch Bar, ⌘1–⌘6 navigation); light and dark mode.
 
@@ -116,7 +120,7 @@ created from them; buttons you've already created keep the titles you gave them.
 ```sh
 scripts/build-app.sh            # release build → build/TouchBar Studio.app
 scripts/build-app.sh debug      # debug build
-scripts/test.sh                 # unit tests (Swift Testing, 51 tests)
+scripts/test.sh                 # unit tests (Swift Testing, 61 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```
@@ -124,8 +128,10 @@ cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 **Xcode:** open `Package.swift` (File › Open…) and run the `TouchBarStudio` scheme. No
 `.xcodeproj` is included: this machine has only the Command Line Tools, so a generated
 project file couldn't be built or verified. SwiftPM packages open natively in Xcode.
-Note that running from Xcode launches a bare executable rather than the `.app` bundle,
-so for Accessibility and Automation testing use `scripts/build-app.sh`.
+Note that running from Xcode or `swift run` launches a bare executable rather than the
+`.app` bundle. On the test Mac, a bare executable started from a shell did not get its
+Touch Bar shown (the same build launched as an app did), and Accessibility/Automation
+grants belong to the bundle, so test with `scripts/build-app.sh` and `open`.
 
 Builds are **ad-hoc signed**. macOS ties Accessibility approval to the code signature,
 so after rebuilding you may have to turn the permission off and on again for

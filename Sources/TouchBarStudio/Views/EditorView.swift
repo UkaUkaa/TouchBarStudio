@@ -124,10 +124,13 @@ struct ComponentLibraryView: View {
     var body: some View {
         List {
             Section(L("Layout")) {
-                ForEach(LayoutComponent.library.prefix(4)) { row($0) }
+                ForEach(LayoutComponent.library.filter { $0.group == .layout }) { row($0) }
+            }
+            Section(L("Widgets")) {
+                ForEach(LayoutComponent.library.filter { $0.group == .widget }) { row($0) }
             }
             Section(L("Buttons with Action")) {
-                ForEach(LayoutComponent.library.dropFirst(4)) { row($0) }
+                ForEach(LayoutComponent.library.filter { $0.group == .action }) { row($0) }
             }
         }
         .listStyle(.sidebar)
@@ -165,6 +168,9 @@ struct ItemListView: View {
                         Text(title(item)).lineLimit(1)
                         if item.kind == .button {
                             Text(item.action.summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else if item.kind == .battery {
+                            Text(model.battery.status?.percentageText ?? L("No battery"))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
                     Spacer()
@@ -215,11 +221,14 @@ struct ItemListView: View {
         case .smallSpace: L("Small Space")
         case .largeSpace: L("Large Space")
         case .flexibleSpace: L("Flexible Space")
+        case .battery: L("Battery")
         }
     }
 
     @ViewBuilder private func itemIcon(_ item: TouchBarItemConfig) -> some View {
-        if item.kind != .button {
+        if item.kind == .battery {
+            Image(systemName: model.battery.status?.symbolName ?? "powerplug")
+        } else if item.kind != .button {
             Image(systemName: "arrow.left.and.right").foregroundStyle(.secondary)
         } else if let image = IconProvider.image(for: item.icon, pointSize: 13) {
             Image(nsImage: image)
@@ -247,6 +256,8 @@ struct ItemPropertiesView: View {
             Form {
                 if item.kind == .button {
                     buttonSections(item)
+                } else if item.kind == .battery {
+                    batterySections(item)
                 } else {
                     Section(L("Space")) {
                         Picker(L("Size"), selection: binding("kind", \.kind, default: .smallSpace)) {
@@ -266,6 +277,33 @@ struct ItemPropertiesView: View {
                 }
             }
             .formStyle(.grouped)
+        }
+    }
+
+    @ViewBuilder
+    private func batterySections(_ item: TouchBarItemConfig) -> some View {
+        Section(L("Battery")) {
+            LabeledContent(L("Now")) {
+                HStack {
+                    BatteryLabel(status: model.battery.status)
+                    if let status = model.battery.status {
+                        Text(status.accessibilityDescription).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Toggle(L("Show percentage"), isOn: binding("showsTitle", \.showsTitle, default: true))
+            LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            Text(L("Updates automatically. On battery power the widget turns orange at 20% and red at 10%."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        Section {
+            ActionEditor(action: binding("action", \.action, default: .none),
+                         associatedBundleIdentifier: nil, depth: 0)
+        } header: {
+            Text(L("On tap"))
+        } footer: {
+            Text(L("By default, tapping opens Battery settings. Choose “None” to make it display-only."))
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 

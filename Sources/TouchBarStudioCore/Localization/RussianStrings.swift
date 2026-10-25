@@ -459,6 +459,25 @@ enum RussianStrings {
         "Hidden": "Скрытые",
         "Info": "Свойства",
 
+        // MARK: Battery widget
+        "Battery": "Батарея",
+        "No battery": "Нет батареи",
+        "Battery %@": "Батарея %@",
+        "charging": "заряжается",
+        "%@ to full": "до полной зарядки %@",
+        "on power adapter": "от адаптера питания",
+        "%@ remaining": "осталось %@",
+        "%d h %d min": "%d ч %d мин",
+        "%d min": "%d мин",
+        "Widgets": "Виджеты",
+        "Now": "Сейчас",
+        "Show percentage": "Показывать процент",
+        "Updates automatically. On battery power the widget turns orange at 20% and red at 10%.":
+            "Обновляется автоматически. При работе от батареи виджет становится оранжевым при 20% и красным при 10%.",
+        "On tap": "При нажатии",
+        "By default, tapping opens Battery settings. Choose “None” to make it display-only.":
+            "По умолчанию нажатие открывает настройки аккумулятора. Выберите «Нет», чтобы виджет только показывал заряд.",
+
         // MARK: Errors
         "This button has no action assigned.": "Этой кнопке не назначено действие.",
         "Invalid action: %@": "Неверное действие: %@",

@@ -56,6 +56,7 @@ final class AppModel {
     @ObservationIgnored let touchBar: TouchBarManager
     let apps = ApplicationProfileManager()
     let permissions = PermissionManager()
+    let battery = BatteryMonitor()
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     /// Opens the main window (provided by the SwiftUI scene).
     @ObservationIgnored var openMainWindow: (() -> Void)?
@@ -92,6 +93,9 @@ final class AppModel {
             self.perform(item, source: L("Hotkey"))
         }
         apps.onChange = { [weak self] in self?.refreshTouchBar() }
+        battery.onChange = { [weak self] status in self?.touchBar.updateBattery(status) }
+        touchBar.updateBattery(battery.status)
+        battery.start()
         apps.start()
         refreshTouchBar()
         registerHotKeys()
@@ -148,6 +152,8 @@ final class AppModel {
     // MARK: Actions
 
     func perform(_ item: TouchBarItemConfig, source: String) {
+        // A widget without an action is just a display: tapping it does nothing.
+        if item.kind != .button && item.action.kind == .none { return }
         Task {
             let context = ExecutionContext(associatedBundleIdentifier: item.associatedBundleIdentifier,
                                            source: "\(source) · \(item.title.isEmpty ? item.action.summary : item.title)")

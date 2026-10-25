@@ -99,6 +99,9 @@ public enum PresetCodec {
         for (index, item) in preset.items.enumerated() {
             let label = L("Item %d", index + 1) + (item.title.isEmpty ? "" : " (“\(item.title.prefix(20))”)")
             if item.title.count > maxTitleLength { error(L("%@: title is too long.", label)) }
+            if item.kind == .battery, item.action.kind != .none {
+                validateAction(item.action, label: label, depth: 0, catalog: catalog, error: error, warning: warning)
+            }
             if item.kind == .button {
                 if item.icon.source == .imageFile { warning(L("%@: uses an image file that may not exist on this Mac.", label)) }
                 if let hk = item.hotKey {

@@ -12,6 +12,8 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
     private var touchBar: NSTouchBar?
     private var buttons: [UUID: NSButton] = [:]
     private var items: [UUID: TouchBarItemConfig] = [:]
+    /// Latest battery reading, applied to battery widgets as they are created or updated.
+    private var battery: BatteryStatus?
     private var isSuspended = false
 
     /// Called when a button on the physical Touch Bar is tapped.
@@ -65,7 +67,16 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         button.bezelColor = success ? .systemGreen : .systemRed
         Task { @MainActor [weak button] in
             try? await Task.sleep(for: .milliseconds(success ? 250 : 900))
-            button?.bezelColor = item.color.nsColor
+            guard let button else { return }
+            if item.kind == .battery { self.applyBattery(to: button, config: item) } else { button.bezelColor = item.color.nsColor }
+        }
+    }
+
+    /// Updates battery widgets in place (no bar rebuild, so nothing flickers).
+    func updateBattery(_ status: BatteryStatus?) {
+        battery = status
+        for (id, config) in items where config.kind == .battery {
+            if let button = buttons[id] { applyBattery(to: button, config: config) }
         }
     }
 
@@ -88,6 +99,14 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
             spacer.translatesAutoresizingMaskIntoConstraints = false
             spacer.widthAnchor.constraint(equalToConstant: config.kind == .smallSpace ? 8 : 32).isActive = true
             item.view = spacer
+        case .battery:
+            let button = NSButton(title: "", target: self, action: #selector(buttonTapped(_:)))
+            button.identifier = NSUserInterfaceItemIdentifier(config.id.uuidString)
+            button.imagePosition = .imageLeading
+            applyBattery(to: button, config: config)
+            buttons[id] = button
+            item.view = button
+            item.customizationLabel = L("Battery")
         case .flexibleSpace:
             return nil
         }
@@ -110,6 +129,26 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         button.bezelColor = config.color.nsColor
         button.setAccessibilityLabel(config.title.isEmpty ? config.action.summary : config.title)
         return button
+    }
+
+    private func applyBattery(to button: NSButton, config: TouchBarItemConfig) {
+        guard let battery else {
+            button.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)
+            button.title = config.showsTitle ? L("No battery") : ""
+            button.setAccessibilityLabel(L("No battery"))
+            button.bezelColor = config.color.nsColor
+            return
+        }
+        button.image = NSImage(systemSymbolName: battery.symbolName, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 16, weight: .regular))
+        button.title = config.showsTitle ? battery.percentageText : ""
+        switch battery.level {
+        case .critical: button.bezelColor = .systemRed
+        case .low: button.bezelColor = .systemOrange
+        case .normal: button.bezelColor = config.color.nsColor
+        }
+        button.setAccessibilityLabel(battery.accessibilityDescription)
+        button.toolTip = battery.accessibilityDescription
     }
 
     @objc private func buttonTapped(_ sender: NSButton) {
