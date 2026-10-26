@@ -127,6 +127,86 @@ created from them; buttons you've already created keep the titles you gave them.
 - A configuration file that can't be read is moved aside (`config.unreadable-<date>.json`)
   instead of being overwritten.
 
+## Install
+
+You need a MacBook Pro with a Touch Bar running macOS 14 Sonoma or later. The app is
+universal and runs on both Apple silicon and Intel models (2016–2020).
+
+### 1. Download
+
+From the release, download `TouchBarStudio-<version>.dmg` (recommended) or
+`TouchBarStudio-<version>.zip`. To check that the download is intact, put
+`SHA256SUMS.txt` in the same folder and run:
+
+```sh
+cd ~/Downloads
+shasum -a 256 -c SHA256SUMS.txt --ignore-missing
+```
+
+Each downloaded file should be reported as `OK`.
+
+### 2. Install
+
+**From the DMG:** double-click `TouchBarStudio-<version>.dmg`, drag **TouchBar Studio**
+onto the **Applications** folder in the window that opens, then eject the disk image
+(the ⏏ button next to it in Finder).
+
+**From the ZIP:** double-click the `.zip` to unpack it and move **TouchBar Studio.app**
+into `/Applications`.
+
+### 3. First launch
+
+The app is not notarized by Apple (it has an ad-hoc signature), so macOS blocks the
+first launch with a message that it can't verify the developer. To allow it once:
+
+1. Open **TouchBar Studio** from Applications. When the warning appears, click
+   **Done** (or **OK**).
+2. Open **System Settings › Privacy & Security**, scroll down to the **Security** section
+   and click **Open Anyway** next to the message about TouchBar Studio.
+3. Confirm with **Open Anyway** and your password or Touch ID.
+
+On macOS 14 you can also Control-click the app in Finder, choose **Open**, then **Open**
+again. Alternatively, in Terminal:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/TouchBar Studio.app"
+```
+
+After that the app opens normally.
+
+### 4. Set up
+
+- The default profile appears on the Touch Bar while TouchBar Studio is the active app.
+- To show your layout over every app, open **Settings › Touch Bar Integration** and
+  choose **Over all apps (experimental)**. See
+  [How it reaches the Touch Bar](#how-it-reaches-the-touch-bar) for what this mode does.
+- To start the app automatically, turn on **Settings › General › Launch at login**.
+- Keyboard-shortcut and media-key actions need **Accessibility** access. In
+  **Settings › Permissions** click **Grant Access…** and turn on TouchBar Studio in
+  System Settings. Everything else works without it.
+- The interface language (English or Russian) is set in **Settings › Language**.
+
+### Update
+
+Quit TouchBar Studio, then install the new version the same way, replacing the old app
+in Applications. Your profiles and settings are kept. If keyboard shortcuts stop working
+after an update, turn TouchBar Studio off and on again in **System Settings › Privacy &
+Security › Accessibility**: the ad-hoc signature changes with every build.
+
+### Uninstall
+
+Quit TouchBar Studio (if your layout is shown over all apps, the normal Touch Bar comes
+back when it quits), then delete the app and, if you don't want to keep your
+configuration, its data folder:
+
+```sh
+rm -rf "/Applications/TouchBar Studio.app"
+rm -rf ~/Library/Application\ Support/TouchBarStudio
+```
+
+Also remove TouchBar Studio from **System Settings › Privacy & Security › Accessibility**
+if you granted access.
+
 ## Requirements
 
 - macOS 14 Sonoma or later (developed and tested on macOS 27.0.1).
@@ -143,6 +223,13 @@ scripts/test.sh                 # unit tests (Swift Testing, 71 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```
+
+**Release:** `scripts/release.sh [version]` runs the tests, builds a universal
+(arm64 + x86_64) app and writes `TouchBarStudio-<version>.dmg`, a `.zip` and
+`SHA256SUMS.txt` to `dist/`. Passing a version updates `CFBundleShortVersionString` and
+increments `CFBundleVersion` in `Support/Info.plist`. With a Developer ID set via
+`SIGN_IDENTITY`, the DMG can then be notarized with `xcrun notarytool submit … --wait`
+and `xcrun stapler staple`, which removes the Gatekeeper step above.
 
 **Xcode:** open `Package.swift` (File › Open…) and run the `TouchBarStudio` scheme. No
 `.xcodeproj` is included: this machine has only the Command Line Tools, so a generated
@@ -202,3 +289,13 @@ Toolchain notes (Command Line Tools only):
   reliably on Apple-silicon Macs.
 - App commands for apps that aren't installed (e.g. Xcode on the test machine) report
   "No installed application…" instead of pretending to succeed.
+
+## License
+
+[MIT with the Commons Clause](LICENSE). Copyright © 2026 Oleksandr Filinskyi.
+
+Anyone, including companies, may use TouchBar Studio for free, including at work, and may
+copy, modify and share it. Selling it is not permitted: you may not offer it, or a product
+or service whose value comes entirely or substantially from it, for a fee (this includes
+paid hosting or paid support for it). Copies must keep the license text, including the
+Commons Clause notice. For other terms, contact the author.

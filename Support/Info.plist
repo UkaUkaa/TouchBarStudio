@@ -4,11 +4,6 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>en</string>
-		<string>ru</string>
-	</array>
 	<key>CFBundleDisplayName</key>
 	<string>TouchBar Studio</string>
 	<key>CFBundleExecutable</key>
@@ -19,6 +14,11 @@
 	<string>dev.touchbarstudio.TouchBarStudio</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ru</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>TouchBar Studio</string>
 	<key>CFBundlePackageType</key>
@@ -36,7 +36,7 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>TouchBar Studio</string>
+	<string>Copyright © 2026 Oleksandr Filinskyi. MIT with Commons Clause: free to use, not for sale.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticTermination</key>
