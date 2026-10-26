@@ -84,14 +84,14 @@ struct TouchBarPreview: View {
             case .battery:
                 BatteryLabel(status: model.battery.status, showsPercentage: item.showsTitle)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
+                    .padding(.horizontal, item.showsTitle ? 12 : LayoutMetrics.compactWidgetPadding)
+                    .frame(minWidth: item.showsTitle ? 64 : nil, minHeight: 30, maxHeight: 30)
                     .background(RoundedRectangle(cornerRadius: 6).fill(batteryBackground(item)))
             case .microphone:
                 MicrophoneLabel(state: model.microphone.state, showsTitle: item.showsTitle)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
+                    .padding(.horizontal, item.showsTitle ? 12 : LayoutMetrics.compactWidgetPadding)
+                    .frame(minWidth: item.showsTitle ? 64 : nil, minHeight: 30, maxHeight: 30)
                     .background(RoundedRectangle(cornerRadius: 6).fill(
                         model.microphone.state?.isMuted == true ? Color.red : item.color.swiftUIColor))
             case .smallSpace, .largeSpace, .flexibleSpace:

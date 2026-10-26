@@ -22,9 +22,9 @@ public enum LayoutMetrics {
         case .largeSpace: return 32
         case .flexibleSpace: return 24
         // Battery icon plus "100%".
-        case .battery: return item.showsTitle ? 92 : 72
+        case .battery: return item.showsTitle ? 92 : compactWidgetWidth(iconWidth: 27)
         // Mic icon plus "Muted" / "Mic on" (longest label in Russian: "Выключен").
-        case .microphone: return item.showsTitle ? 112 : 72
+        case .microphone: return item.showsTitle ? 112 : compactWidgetWidth(iconWidth: 14)
         case .button:
             // Measured on hardware: icon-only 72 pt; "Mail" with icon 89 pt; "Notes" 90 pt; "Calendar" 107 pt.
             let title = item.showsTitle ? item.title : ""
@@ -32,6 +32,13 @@ public enum LayoutMetrics {
             return max(72, Double(title.count) * 6.5 + (item.icon.source == .none ? 0 : 26) + 36)
         }
     }
+
+    /// Icon-only widget button: the icon plus equal side padding.
+    public static func compactWidgetWidth(iconWidth: Double) -> Double {
+        (iconWidth + 2 * compactWidgetPadding).rounded(.up)
+    }
+
+    public static let compactWidgetPadding: Double = 13
 
     public static func estimatedWidth(of items: [TouchBarItemConfig]) -> Double {
         items.reduce(0) { $0 + estimatedWidth(of: $1) + itemSpacing }

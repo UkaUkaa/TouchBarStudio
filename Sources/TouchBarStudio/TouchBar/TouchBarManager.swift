@@ -153,6 +153,19 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         return button
     }
 
+    private static let compactWidthID = "TouchBarStudio.compactWidth"
+
+    /// Without a title, a widget is drawn as a centred icon in a button only slightly wider
+    /// than the icon, instead of the standard 72 pt button with the icon on the left.
+    private func fitWidget(_ button: NSButton, iconOnly: Bool) {
+        button.imagePosition = iconOnly ? .imageOnly : .imageLeading
+        button.constraints.filter { $0.identifier == Self.compactWidthID }.forEach { $0.isActive = false }
+        guard iconOnly, let image = button.image else { return }
+        let width = button.widthAnchor.constraint(equalToConstant: LayoutMetrics.compactWidgetWidth(iconWidth: image.size.width))
+        width.identifier = Self.compactWidthID
+        width.isActive = true
+    }
+
     private func applyMicrophone(to button: NSButton, config: TouchBarItemConfig) {
         guard let microphone else {
             button.image = NSImage(systemSymbolName: "mic.slash", accessibilityDescription: nil)
@@ -164,6 +177,7 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         button.image = NSImage(systemSymbolName: microphone.symbolName, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .regular))
         button.title = config.showsTitle ? (microphone.isMuted ? L("Muted") : L("Mic on")) : ""
+        fitWidget(button, iconOnly: !config.showsTitle)
         // Red when muted, so the state is obvious at a glance.
         button.bezelColor = microphone.isMuted ? .systemRed : config.color.nsColor
         let description = microphone.isMuted ? L("Microphone muted: %@", microphone.deviceName) : L("Microphone on: %@", microphone.deviceName)
@@ -182,6 +196,7 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         button.image = NSImage(systemSymbolName: battery.symbolName, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .regular))
         button.title = config.showsTitle ? battery.percentageText : ""
+        fitWidget(button, iconOnly: !config.showsTitle)
         switch battery.level {
         case .critical: button.bezelColor = .systemRed
         case .low: button.bezelColor = .systemOrange
