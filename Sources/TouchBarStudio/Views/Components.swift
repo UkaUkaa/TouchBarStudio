@@ -274,3 +274,50 @@ struct ColorSwatchPicker: View {
         }
     }
 }
+
+/// Icon size in points, with a reset to the standard size.
+struct IconSizeSlider: View {
+    @Binding var size: Double
+    var label = L("Icon size")
+
+    var body: some View {
+        LabeledContent(label) {
+            HStack {
+                Slider(value: $size, in: IconSize.range, step: 1) {
+                    EmptyView()
+                } minimumValueLabel: {
+                    Image(systemName: "star.fill").font(.system(size: 9))
+                } maximumValueLabel: {
+                    Image(systemName: "star.fill").font(.system(size: 16))
+                }
+                .frame(minWidth: 140)
+                Text(L("%d pt", Int(size))).monospacedDigit().frame(width: 44, alignment: .trailing)
+                Button(L("Reset")) { size = IconSize.standard }
+                    .disabled(size == IconSize.standard)
+            }
+        }
+    }
+}
+
+/// Width in points for buttons or sliders.
+struct WidthSlider: View {
+    @Binding var width: Double
+    var range: ClosedRange<Double> = ButtonWidth.range
+    var label = L("Width")
+
+    var body: some View {
+        LabeledContent(label) {
+            HStack {
+                Slider(value: $width, in: range, step: 2) {
+                    EmptyView()
+                } minimumValueLabel: {
+                    Image(systemName: "rectangle.compress.vertical").rotationEffect(.degrees(90))
+                } maximumValueLabel: {
+                    Image(systemName: "rectangle.expand.vertical").rotationEffect(.degrees(90))
+                }
+                .frame(minWidth: 140)
+                Text(L("%d pt", Int(width))).monospacedDigit().frame(width: 52, alignment: .trailing)
+            }
+        }
+    }
+}

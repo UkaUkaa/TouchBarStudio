@@ -9,6 +9,12 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case battery
     /// Shows whether the system microphone is muted; tapping toggles it by default.
     case microphone
+    /// Current time and/or date. Runs its action (if any) when tapped.
+    case clock
+    /// Slider for the output volume of the default sound device.
+    case volume
+    /// Slider for the built-in display's brightness.
+    case brightness
 }
 
 public struct ButtonIcon: Codable, Hashable, Sendable {
@@ -53,6 +59,15 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
     /// Application the button belongs to: used as the default target of keyboard
     /// shortcuts and as an icon source.
     public var associatedBundleIdentifier: String?
+    /// Clock widget only.
+    public var clockFormat: ClockFormat?
+    /// Clock widget with `clockFormat == .custom`.
+    public var clockCustom: ClockCustomFormat?
+    /// Icon size in points; nil uses the default from Settings.
+    public var iconSize: Double?
+    /// Width in points: nil uses the default from Settings, `ButtonWidth.fitContent` (0)
+    /// sizes the button to its content. For sliders it is the width of the track.
+    public var width: Double?
 
     public init(
         id: UUID = UUID(),
@@ -63,7 +78,11 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         color: ButtonColor = .standard,
         action: ActionConfig = .none,
         hotKey: KeyCombo? = nil,
-        associatedBundleIdentifier: String? = nil
+        associatedBundleIdentifier: String? = nil,
+        clockFormat: ClockFormat? = nil,
+        clockCustom: ClockCustomFormat? = nil,
+        iconSize: Double? = nil,
+        width: Double? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -74,6 +93,10 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         self.action = action
         self.hotKey = hotKey
         self.associatedBundleIdentifier = associatedBundleIdentifier
+        self.clockFormat = clockFormat
+        self.clockCustom = clockCustom
+        self.iconSize = iconSize
+        self.width = width
     }
 
     public static func button(
@@ -104,10 +127,56 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         TouchBarItemConfig(kind: .microphone, title: L("Microphone"), action: .microphone(.toggle))
     }
 
+    /// Clock widget; tapping opens Calendar by default.
+    public static func clock(_ format: ClockFormat = .time) -> TouchBarItemConfig {
+        TouchBarItemConfig(kind: .clock, title: L("Clock"), action: .openApp("com.apple.iCal"), clockFormat: format)
+    }
+
+    /// Volume slider for the default output device.
+    public static func volume() -> TouchBarItemConfig {
+        TouchBarItemConfig(kind: .volume, title: L("Volume"))
+    }
+
+    /// Brightness slider for the built-in display.
+    public static func brightness() -> TouchBarItemConfig {
+        TouchBarItemConfig(kind: .brightness, title: L("Brightness"))
+    }
+
     public static let batterySettingsURL = "x-apple.systempreferences:com.apple.Battery-Settings.extension"
 
     /// Items that are tapped like buttons (have an action, title, color).
-    public var isTappable: Bool { kind == .button || kind == .battery || kind == .microphone }
+    public var isTappable: Bool { kind == .button || kind == .battery || kind == .microphone || kind == .clock }
+
+    /// What a clock widget shows at `date`.
+    public func clockText(at date: Date, language: AppLanguage = L10n.language, base: Locale = .autoupdatingCurrent,
+                          timeZone: TimeZone = .autoupdatingCurrent) -> String {
+        (clockFormat ?? .time).string(from: date, custom: clockCustom, language: language, base: base, timeZone: timeZone)
+    }
+
+    /// Icon size in points, using `defaultSize` (from Settings) unless the item has its own.
+    public func resolvedIconSize(default defaultSize: Double) -> Double {
+        IconSize.clamp(iconSize ?? defaultSize)
+    }
+
+    /// Fixed width in points, or nil when the item fits its content. `defaultWidth` is the
+    /// Settings value (nil: fit content); it applies to buttons and widgets, not to spaces
+    /// or sliders.
+    public func resolvedWidth(default defaultWidth: Double?) -> Double? {
+        switch kind {
+        case .smallSpace, .largeSpace, .flexibleSpace:
+            return nil
+        case .volume, .brightness:
+            guard let width, width != ButtonWidth.fitContent else { return nil }
+            return ButtonWidth.clampSlider(width)
+        case .button, .battery, .microphone, .clock:
+            let value = width ?? defaultWidth
+            guard let value, value != ButtonWidth.fitContent else { return nil }
+            return ButtonWidth.clamp(value)
+        }
+    }
+
+    /// System sliders: dragged, not tapped, and without an action.
+    public var isSlider: Bool { kind == .volume || kind == .brightness }
 
     public static func space(_ kind: ItemKind) -> TouchBarItemConfig {
         TouchBarItemConfig(kind: kind)
@@ -121,7 +190,7 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, title, showsTitle, icon, color, action, hotKey, associatedBundleIdentifier
+        case id, kind, title, showsTitle, icon, color, action, hotKey, associatedBundleIdentifier, clockFormat, clockCustom, iconSize, width
     }
 
     // Lenient decoding: missing optional fields fall back to defaults so older or
@@ -137,6 +206,10 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         action = try c.decodeIfPresent(ActionConfig.self, forKey: .action) ?? .none
         hotKey = try c.decodeIfPresent(KeyCombo.self, forKey: .hotKey)
         associatedBundleIdentifier = try c.decodeIfPresent(String.self, forKey: .associatedBundleIdentifier)
+        clockFormat = try c.decodeIfPresent(ClockFormat.self, forKey: .clockFormat)
+        clockCustom = try c.decodeIfPresent(ClockCustomFormat.self, forKey: .clockCustom)
+        iconSize = try c.decodeIfPresent(Double.self, forKey: .iconSize)
+        width = try c.decodeIfPresent(Double.self, forKey: .width)
     }
 }
 
@@ -164,4 +237,26 @@ public struct Profile: Codable, Hashable, Identifiable, Sendable {
         bundleIdentifiers = try c.decodeIfPresent([String].self, forKey: .bundleIdentifiers) ?? []
         items = try c.decodeIfPresent([TouchBarItemConfig].self, forKey: .items) ?? []
     }
+}
+
+/// Limits for icon sizes on the Touch Bar (it is 30 pt tall).
+public enum IconSize {
+    public static let standard: Double = 16
+    /// Above 22 pt tall symbols (e.g. the microphone) are clipped by the 30 pt bar.
+    public static let range: ClosedRange<Double> = 10...22
+
+    public static func clamp(_ size: Double) -> Double { min(range.upperBound, max(range.lowerBound, size)) }
+}
+
+/// Limits for fixed button widths. The Touch Bar is 30 pt tall, so only the width can change.
+public enum ButtonWidth {
+    /// Stored as an item's `width` to fit the content even when Settings set a fixed width.
+    public static let fitContent: Double = 0
+    public static let range: ClosedRange<Double> = 30...300
+    public static let sliderRange: ClosedRange<Double> = 60...400
+    /// Starting value when a fixed width is first turned on.
+    public static let standard: Double = 72
+
+    public static func clamp(_ width: Double) -> Double { min(range.upperBound, max(range.lowerBound, width)) }
+    public static func clampSlider(_ width: Double) -> Double { min(sliderRange.upperBound, max(sliderRange.lowerBound, width)) }
 }

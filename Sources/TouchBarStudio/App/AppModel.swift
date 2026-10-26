@@ -58,6 +58,9 @@ final class AppModel {
     let permissions = PermissionManager()
     let battery = BatteryMonitor()
     let microphone = MicrophoneMonitor()
+    let volume = VolumeMonitor()
+    let brightness = BrightnessMonitor()
+    let clock = ClockMonitor()
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     /// Opens the main window (provided by the SwiftUI scene).
     @ObservationIgnored var openMainWindow: (() -> Void)?
@@ -102,6 +105,16 @@ final class AppModel {
         microphone.onChange = { [weak self] state in self?.touchBar.updateMicrophone(state) }
         touchBar.updateMicrophone(microphone.state)
         microphone.start()
+        volume.onChange = { [weak self] state in self?.touchBar.updateVolume(state) }
+        touchBar.updateVolume(volume.state)
+        volume.start()
+        brightness.onChange = { [weak self] value in self?.touchBar.updateBrightness(value) }
+        touchBar.updateBrightness(brightness.brightness)
+        brightness.start()
+        clock.onChange = { [weak self] date in self?.touchBar.updateClock(date) }
+        touchBar.updateClock(clock.now)
+        clock.start()
+        touchBar.onSliderChange = { [weak self] kind, value in self?.setSystemLevel(kind, value) }
         apps.start()
         refreshTouchBar()
         registerHotKeys()
@@ -146,6 +159,8 @@ final class AppModel {
             frontmostIsSelf: apps.frontmostIsSelf,
             closedInApp: closedInApp,
             providerShowsOverOtherApps: providerShowsOverOtherApps))
+        touchBar.defaultIconSize = config.settings.iconSize
+        touchBar.defaultWidth = config.settings.buttonWidth
         touchBar.show(profile, force: force)
     }
 
@@ -223,11 +238,26 @@ final class AppModel {
             let result = await executor.run(item.action, context: context)
             // Core Audio notifies too, but refresh right away so the widget flips immediately.
             microphone.refresh()
+            brightness.refresh()
             // The microphone widget's new colour is its own feedback; only flash on failure.
             if !(item.kind == .microphone && result.succeeded) {
                 touchBar.flash(itemID: item.id, success: result.succeeded)
             }
             activity = executor.activity
+        }
+    }
+
+    /// A volume or brightness slider moved (on the Touch Bar or in the app).
+    func setSystemLevel(_ kind: ItemKind, _ value: Float) {
+        switch kind {
+        case .volume:
+            try? VolumeControl.setVolume(value)
+            volume.refresh()
+        case .brightness:
+            try? DisplayBrightness.set(value)
+            brightness.refresh()
+        default:
+            break
         }
     }
 
@@ -324,7 +354,9 @@ final class AppModel {
             touchBar.setProvider(Self.makeProvider(for: config.settings))
         }
         executor.policy = ExecutionPolicy(settings: config.settings)
-        refreshTouchBar()
+        // Icons and widths are set when the bar is built, so new defaults need a rebuild.
+        refreshTouchBar(force: old.settings.iconSize != config.settings.iconSize
+                        || old.settings.buttonWidth != config.settings.buttonWidth)
         if hotKeyEntries(old) != hotKeyEntries(config) || old.settings.enableGlobalHotKeys != config.settings.enableGlobalHotKeys {
             registerHotKeys()
         }

@@ -99,6 +99,11 @@ public final class LiveSystemServices: SystemServices {
     }
 
     public func postMediaKey(_ key: MediaKey) throws {
+        switch key {
+        case .brightnessUp where DisplayBrightness.isAvailable: try DisplayBrightness.step(up: true); return
+        case .brightnessDown where DisplayBrightness.isAvailable: try DisplayBrightness.step(up: false); return
+        default: break
+        }
         guard isAccessibilityTrusted() else { throw ActionError.accessibilityPermissionRequired }
         // NX_SYSDEFINED event, subtype 8 (aux control button), as sent by the hardware keys.
         for (state, flags) in [(0xA, 0xA00), (0xB, 0xB00)] {

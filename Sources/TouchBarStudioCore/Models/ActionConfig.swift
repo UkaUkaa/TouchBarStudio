@@ -19,6 +19,7 @@ public enum ActionKind: String, Codable, CaseIterable, Sendable, Identifiable {
 
 public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
     case playPause, next, previous, volumeUp, volumeDown, mute
+    case brightnessUp, brightnessDown, keyboardBrightnessUp, keyboardBrightnessDown
 
     public var id: String { rawValue }
 
@@ -27,7 +28,11 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
         switch self {
         case .volumeUp: 0
         case .volumeDown: 1
+        case .brightnessUp: 2
+        case .brightnessDown: 3
         case .mute: 7
+        case .keyboardBrightnessUp: 21
+        case .keyboardBrightnessDown: 22
         case .playPause: 16
         case .next: 17
         case .previous: 18
@@ -42,6 +47,19 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
         case .volumeUp: L("Volume Up")
         case .volumeDown: L("Volume Down")
         case .mute: L("Mute")
+        case .brightnessUp: L("Brightness Up")
+        case .brightnessDown: L("Brightness Down")
+        case .keyboardBrightnessUp: L("Keyboard Brightness Up")
+        case .keyboardBrightnessDown: L("Keyboard Brightness Down")
+        }
+    }
+
+    /// Display brightness is changed directly when the Mac allows it, so those two keys
+    /// work without Accessibility access; the others are posted as key events.
+    public var requiresAccessibility: Bool {
+        switch self {
+        case .brightnessUp, .brightnessDown: !DisplayBrightness.isAvailable
+        default: true
         }
     }
 
@@ -53,6 +71,10 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
         case .volumeUp: "speaker.wave.3.fill"
         case .volumeDown: "speaker.wave.1.fill"
         case .mute: "speaker.slash.fill"
+        case .brightnessUp: "sun.max.fill"
+        case .brightnessDown: "sun.min.fill"
+        case .keyboardBrightnessUp: "light.max"
+        case .keyboardBrightnessDown: "light.min"
         }
     }
 }
@@ -171,7 +193,8 @@ public struct ActionConfig: Codable, Hashable, Sendable {
     /// Whether running this action needs permission to post synthetic input events.
     public func requiresAccessibility(catalog: AppCommandCatalog = .standard) -> Bool {
         switch kind {
-        case .keyboardShortcut, .mediaKey: true
+        case .keyboardShortcut: true
+        case .mediaKey: mediaKey?.requiresAccessibility ?? true
         case .appCommand: catalog.command(id: appCommandID ?? "")?.action.requiresAccessibility(catalog: catalog) ?? false
         case .sequence: (steps ?? []).contains { $0.requiresAccessibility(catalog: catalog) }
         default: false

@@ -23,6 +23,11 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var keepControlStrip: Bool
     public var enableGlobalHotKeys: Bool
     public var language: AppLanguage
+    /// Default icon size on the Touch Bar, in points; items can override it.
+    public var iconSize: Double
+    /// Fixed width of every button and widget in points; nil fits each to its content.
+    /// Items can override it.
+    public var buttonWidth: Double?
 
     public init(
         providerKind: TouchBarProviderKind = .application,
@@ -33,7 +38,9 @@ public struct AppSettings: Codable, Hashable, Sendable {
         shellTimeoutSeconds: Int = 30,
         keepControlStrip: Bool = true,
         enableGlobalHotKeys: Bool = true,
-        language: AppLanguage = .system
+        language: AppLanguage = .system,
+        iconSize: Double = IconSize.standard,
+        buttonWidth: Double? = nil
     ) {
         self.providerKind = providerKind
         self.autoSwitchProfiles = autoSwitchProfiles
@@ -44,11 +51,13 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.keepControlStrip = keepControlStrip
         self.enableGlobalHotKeys = enableGlobalHotKeys
         self.language = language
+        self.iconSize = iconSize
+        self.buttonWidth = buttonWidth
     }
 
     enum CodingKeys: String, CodingKey {
         case providerKind, autoSwitchProfiles, manualProfileID, allowShellCommands, allowAppleScript
-        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language
+        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language, iconSize, buttonWidth
     }
 
     public init(from decoder: Decoder) throws {
@@ -63,6 +72,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         keepControlStrip = try c.decodeIfPresent(Bool.self, forKey: .keepControlStrip) ?? d.keepControlStrip
         enableGlobalHotKeys = try c.decodeIfPresent(Bool.self, forKey: .enableGlobalHotKeys) ?? d.enableGlobalHotKeys
         language = (try? c.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? d.language
+        iconSize = IconSize.clamp((try? c.decodeIfPresent(Double.self, forKey: .iconSize)) ?? d.iconSize)
+        buttonWidth = (try? c.decodeIfPresent(Double.self, forKey: .buttonWidth)).flatMap { $0 }.map(ButtonWidth.clamp)
     }
 }
 

@@ -107,9 +107,13 @@ public final class ActionExecutor {
         switch action.kind {
         case .openApplication:
             if let id = action.bundleIdentifier, !services.isInstalled(bundleIdentifier: id) { problems.append(.applicationNotFound(id)) }
-        case .keyboardShortcut, .mediaKey:
+        case .keyboardShortcut:
             if !services.isAccessibilityTrusted() { problems.append(.accessibilityPermissionRequired) }
             if let t = shortcutTarget(action, context), !services.isInstalled(bundleIdentifier: t) { problems.append(.applicationNotFound(t)) }
+        case .mediaKey:
+            if action.mediaKey?.requiresAccessibility ?? true, !services.isAccessibilityTrusted() {
+                problems.append(.accessibilityPermissionRequired)
+            }
         case .appleScript:
             if !policy.allowAppleScript { problems.append(.appleScriptDisabled) }
             if !trust.isApproved(action) { problems.append(.notApproved(.appleScript)) }

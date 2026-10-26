@@ -99,7 +99,7 @@ public enum PresetCodec {
         for (index, item) in preset.items.enumerated() {
             let label = L("Item %d", index + 1) + (item.title.isEmpty ? "" : " (“\(item.title.prefix(20))”)")
             if item.title.count > maxTitleLength { error(L("%@: title is too long.", label)) }
-            if item.kind == .battery || item.kind == .microphone, item.action.kind != .none {
+            if item.kind == .battery || item.kind == .microphone || item.kind == .clock, item.action.kind != .none {
                 validateAction(item.action, label: label, depth: 0, catalog: catalog, error: error, warning: warning)
             }
             if item.kind == .button {

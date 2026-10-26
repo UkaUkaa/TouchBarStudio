@@ -33,6 +33,26 @@ struct SettingsView: View {
                 }
             }
 
+            Section(L("Appearance")) {
+                IconSizeSlider(size: setting(\.iconSize))
+                Text(L("Default size of icons on the Touch Bar. Each button or widget can have its own size in the editor."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Picker(L("Button width"), selection: Binding(
+                    get: { model.config.settings.buttonWidth != nil },
+                    set: { fixed in model.config.settings.buttonWidth = fixed ? ButtonWidth.standard : nil })) {
+                    Text(L("Fit content")).tag(false)
+                    Text(L("Same for all")).tag(true)
+                }
+                .pickerStyle(.segmented)
+                if let width = model.config.settings.buttonWidth {
+                    WidthSlider(width: Binding(get: { width }, set: { model.config.settings.buttonWidth = $0 }))
+                }
+                Text(L("Width of every button and widget (clock, battery, microphone). The Touch Bar's height is fixed by the hardware. Each item can have its own width in the editor."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Section(L("Touch Bar Integration")) {
                 Picker(L("Mode"), selection: Binding(
                     get: { model.config.settings.providerKind },

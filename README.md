@@ -88,6 +88,26 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
   muted, follows changes made elsewhere and switches with the default input device. The
   "Microphone" action (toggle / mute / unmute) can also go on any button, a global hotkey or
   a sequence.
+- **Clock widget**: time, time with seconds, date and time, or date, in the interface
+  language and following the macOS 12/24-hour setting, or a custom format: day/month or
+  month/day or year first, year as YY/YYYY or none, date and time separators, seconds,
+  24/12 hours, weekday, time before or after the date (e.g. `26.10.26 14:05:09`,
+  `10/26 2:05 PM`, `2026-10-26 14:05`), or your own Unicode date pattern. Tapping opens
+  Calendar (configurable or none).
+- **Icon size**: a default in Settings › Appearance (10–22 pt, standard 16) and an optional
+  size per button or widget.
+- **Button width**: in Settings › Appearance every button and widget either fits its
+  content or gets the same fixed width (30–300 pt); each item can instead fit its content or
+  have its own width, and volume/brightness sliders can have their own track width
+  (60–400 pt). The height is fixed by the hardware.
+- **Volume and brightness sliders**: the volume of the default output device (Core Audio
+  virtual main volume, no permission needed) and the brightness of the built-in display
+  (the private DisplayServices framework, looked up at runtime). Both follow changes made
+  with the keys, Control Center or auto-brightness.
+- **System buttons** in the component library: brightness and keyboard backlight −/+,
+  volume −/+, mute, previous / play-pause / next, and the system commands (lock screen,
+  screenshot, Spotlight, Mission Control…). Display brightness buttons change it directly and
+  work without Accessibility; the others are sent like the hardware keys and need it.
 - **Dashboard, Actions, Application Profiles, Presets, Settings** sections; menu bar extra;
   native menus (Layout, Touch Bar, ⌘1–⌘6 navigation); light and dark mode.
 

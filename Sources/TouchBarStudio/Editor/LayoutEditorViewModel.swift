@@ -4,7 +4,7 @@ import TouchBarStudioCore
 
 /// A component that can be dropped into a layout from the library.
 struct LayoutComponent: Identifiable, Hashable {
-    enum Group { case layout, widget, action }
+    enum Group { case layout, widget, system, action }
 
     var id: String
     var group: Group = .layout
@@ -27,6 +27,23 @@ struct LayoutComponent: Identifiable, Hashable {
         ]
         list.append(LayoutComponent(id: "battery", group: .widget, title: L("Battery"), symbol: "battery.75") { .battery() })
         list.append(LayoutComponent(id: "microphone", group: .widget, title: L("Microphone"), symbol: "mic.fill") { .microphone() })
+        list.append(LayoutComponent(id: "clock", group: .widget, title: L("Clock"), symbol: "clock") { .clock() })
+        list.append(LayoutComponent(id: "clockDate", group: .widget, title: L("Clock with Date"), symbol: "calendar.badge.clock") { .clock(.dateAndTime) })
+        list.append(LayoutComponent(id: "volume", group: .widget, title: L("Volume Slider"), symbol: "speaker.wave.2.fill") { .volume() })
+        list.append(LayoutComponent(id: "brightness", group: .widget, title: L("Brightness Slider"), symbol: "sun.max.fill") { .brightness() })
+        // Ready-made icon-only buttons for the system keys and commands.
+        let keys: [MediaKey] = [.brightnessDown, .brightnessUp, .keyboardBrightnessDown, .keyboardBrightnessUp,
+                                .volumeDown, .volumeUp, .mute, .previous, .playPause, .next]
+        for key in keys {
+            list.append(LayoutComponent(id: "system.\(key.rawValue)", group: .system, title: key.title, symbol: key.symbolName) {
+                .button(key.title, symbol: key.symbolName, action: .media(key), showsTitle: false)
+            })
+        }
+        for command in AppCommandCatalog.standard.commands where command.id.hasPrefix("system.") {
+            list.append(LayoutComponent(id: "system.\(command.id)", group: .system, title: command.title, symbol: command.symbol) {
+                .button(command.title, symbol: command.symbol, action: .command(command.id), showsTitle: false)
+            })
+        }
         for descriptor in ActionRegistry.descriptors {
             list.append(LayoutComponent(id: "action.\(descriptor.kind.rawValue)", group: .action, title: descriptor.title, symbol: descriptor.symbol) {
                 TouchBarItemConfig(title: descriptor.title, icon: .symbol(descriptor.symbol), action: ActionRegistry.template(for: descriptor.kind))

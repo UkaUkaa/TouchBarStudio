@@ -19,6 +19,9 @@ public enum ActionError: Error, LocalizedError, Equatable, Sendable {
     case noInputDevice
     case microphoneNotControllable(String)
     case microphoneControlFailed(Int)
+    case brightnessNotAvailable
+    case noOutputDevice
+    case volumeControlFailed(Int)
 
     public var errorDescription: String? {
         switch self {
@@ -45,6 +48,9 @@ public enum ActionError: Error, LocalizedError, Equatable, Sendable {
         case .noInputDevice: L("No microphone (audio input device) is available.")
         case .microphoneNotControllable(let name): L("“%@” does not let apps mute it or change its input volume.", name)
         case .microphoneControlFailed(let status): L("macOS refused to change the microphone (Core Audio error %d).", status)
+        case .brightnessNotAvailable: L("The brightness of this display can't be changed by apps.")
+        case .noOutputDevice: L("No sound output device is available.")
+        case .volumeControlFailed(let status): L("macOS refused to change the volume (Core Audio error %d).", status)
         }
     }
 }

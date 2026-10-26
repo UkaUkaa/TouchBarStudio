@@ -129,6 +129,9 @@ struct ComponentLibraryView: View {
             Section(L("Widgets")) {
                 ForEach(LayoutComponent.library.filter { $0.group == .widget }) { row($0) }
             }
+            Section(L("System Buttons")) {
+                ForEach(LayoutComponent.library.filter { $0.group == .system }) { row($0) }
+            }
             Section(L("Buttons with Action")) {
                 ForEach(LayoutComponent.library.filter { $0.group == .action }) { row($0) }
             }
@@ -173,6 +176,15 @@ struct ItemListView: View {
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         } else if item.kind == .microphone {
                             Text(MicrophoneLabel.description(model.microphone.state))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else if item.kind == .clock {
+                            Text((item.clockFormat ?? .time).title)
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else if item.kind == .volume {
+                            Text(VolumeLabel.description(model.volume.state))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else if item.kind == .brightness {
+                            Text(BrightnessLabel.description(model.brightness.brightness))
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
@@ -226,6 +238,9 @@ struct ItemListView: View {
         case .flexibleSpace: L("Flexible Space")
         case .battery: L("Battery")
         case .microphone: L("Microphone")
+        case .clock: L("Clock")
+        case .volume: L("Volume")
+        case .brightness: L("Brightness")
         }
     }
 
@@ -234,6 +249,12 @@ struct ItemListView: View {
             Image(systemName: model.battery.status?.symbolName ?? "powerplug")
         } else if item.kind == .microphone {
             Image(systemName: model.microphone.state?.symbolName ?? "mic.slash")
+        } else if item.kind == .clock {
+            Image(systemName: "clock")
+        } else if item.kind == .volume {
+            Image(systemName: model.volume.state?.symbolName ?? "speaker.slash")
+        } else if item.kind == .brightness {
+            Image(systemName: "sun.max")
         } else if item.kind != .button {
             Image(systemName: "arrow.left.and.right").foregroundStyle(.secondary)
         } else if let image = IconProvider.image(for: item.icon, pointSize: 13) {
@@ -266,6 +287,10 @@ struct ItemPropertiesView: View {
                     batterySections(item)
                 } else if item.kind == .microphone {
                     microphoneSections(item)
+                } else if item.kind == .clock {
+                    clockSections(item)
+                } else if item.isSlider {
+                    sliderSections(item)
                 } else {
                     Section(L("Space")) {
                         Picker(L("Size"), selection: binding("kind", \.kind, default: .smallSpace)) {
@@ -299,6 +324,8 @@ struct ItemPropertiesView: View {
             }
             Toggle(L("Show state text"), isOn: binding("showsTitle", \.showsTitle, default: true))
             LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            iconSizeRows(item)
+            widthRows(item)
             Text(L("Mutes the current input device for every app. The widget turns red while the microphone is muted and follows changes made elsewhere (System Settings, other apps, a headset being plugged in)."))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -310,6 +337,209 @@ struct ItemPropertiesView: View {
             Text(L("On tap"))
         }
         hotKeySection(item)
+    }
+
+    private enum WidthChoice: Hashable { case settings, fitContent, fixed }
+
+    @ViewBuilder
+    private func widthRows(_ item: TouchBarItemConfig) -> some View {
+        let choice: WidthChoice = switch item.width {
+        case nil: .settings
+        case ButtonWidth.fitContent: .fitContent
+        default: .fixed
+        }
+        let settingsWidth = model.config.settings.buttonWidth
+        Picker(L("Width"), selection: Binding(
+            get: { choice },
+            set: { newChoice in
+                model.editor.update(itemID, field: "width") { config in
+                    switch newChoice {
+                    case .settings: config.width = nil
+                    case .fitContent: config.width = ButtonWidth.fitContent
+                    case .fixed:
+                        config.width = config.isSlider ? LayoutMetrics.sliderWidth
+                            : (settingsWidth ?? LayoutMetrics.estimatedWidth(of: config, defaultIconSize: model.config.settings.iconSize).rounded())
+                    }
+                }
+            })) {
+            if item.isSlider {
+                Text(L("Standard (%d pt)", Int(LayoutMetrics.sliderWidth))).tag(WidthChoice.settings)
+            } else {
+                Text(settingsWidth.map { L("As in Settings (%d pt)", Int($0)) } ?? L("As in Settings (fit content)")).tag(WidthChoice.settings)
+                Text(L("Fit content")).tag(WidthChoice.fitContent)
+            }
+            Text(L("Own width")).tag(WidthChoice.fixed)
+        }
+        if choice == .fixed, let width = item.width {
+            WidthSlider(width: Binding(
+                get: { width },
+                set: { value in model.editor.update(itemID, field: "width") { $0.width = value } }),
+                range: item.isSlider ? ButtonWidth.sliderRange : ButtonWidth.range)
+        }
+    }
+
+    @ViewBuilder
+    private func iconSizeRows(_ item: TouchBarItemConfig) -> some View {
+        let defaultSize = model.config.settings.iconSize
+        Toggle(L("Own icon size"), isOn: Binding(
+            get: { item.iconSize != nil },
+            set: { on in model.editor.update(itemID, field: "iconSize") { $0.iconSize = on ? defaultSize : nil } }))
+        if let size = item.iconSize {
+            IconSizeSlider(size: Binding(
+                get: { size },
+                set: { value in model.editor.update(itemID, field: "iconSize") { $0.iconSize = value } }))
+        } else {
+            Text(L("Uses the default size from Settings (%d pt).", Int(defaultSize)))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func clockSections(_ item: TouchBarItemConfig) -> some View {
+        Section(L("Clock")) {
+            Picker(L("Show"), selection: Binding(
+                get: { item.clockFormat ?? .time },
+                set: { format in
+                    model.editor.update(itemID, field: "clockFormat") { config in
+                        config.clockFormat = format
+                        if format == .custom, config.clockCustom == nil { config.clockCustom = ClockCustomFormat() }
+                    }
+                })) {
+                ForEach(ClockFormat.allCases) { format in
+                    Text("\(format.title) — \(format.string(from: model.clock.now, custom: item.clockCustom))").tag(format)
+                }
+            }
+            if item.clockFormat == .custom {
+                clockCustomRows(item)
+            }
+            LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            widthRows(item)
+            Text(L("Named formats follow the region and 12/24-hour settings of macOS."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        Section {
+            ActionEditor(action: binding("action", \.action, default: .none),
+                         associatedBundleIdentifier: nil, depth: 0)
+        } header: {
+            Text(L("On tap"))
+        } footer: {
+            Text(L("By default, tapping opens Calendar. Choose “None” to make it display-only."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        hotKeySection(item)
+    }
+
+    /// Ready-made custom formats for the "Quick choice" menu.
+    private static let quickClockFormats: [ClockCustomFormat] = [
+        .init(time: .hoursMinutesSeconds),
+        .init(year: .twoDigits, time: .hoursMinutesSeconds),
+        .init(time: .hoursMinutes),
+        .init(year: .twoDigits, time: .hoursMinutes),
+        .init(dateOrder: .monthDayYear, dateSeparator: "/", time: .hoursMinutes),
+        .init(dateOrder: .monthDayYear, year: .twoDigits, dateSeparator: "/", time: .hoursMinutes),
+        .init(dateOrder: .yearMonthDay, year: .fourDigits, dateSeparator: "-", time: .hoursMinutes),
+        .init(showsDate: false, time: .hoursMinutesSeconds),
+    ]
+
+    /// Binding to one option of the item's custom clock format.
+    private func clockField<T>(_ keyPath: WritableKeyPath<ClockCustomFormat, T>, _ custom: ClockCustomFormat) -> Binding<T> {
+        Binding(get: { custom[keyPath: keyPath] },
+                set: { value in model.editor.update(itemID, field: "clockCustom") { config in
+                    var format = config.clockCustom ?? ClockCustomFormat()
+                    format[keyPath: keyPath] = value
+                    config.clockCustom = format
+                } })
+    }
+
+    @ViewBuilder
+    private func clockCustomRows(_ item: TouchBarItemConfig) -> some View {
+        let custom = item.clockCustom ?? ClockCustomFormat()
+        LabeledContent(L("Example")) {
+            Text(item.clockText(at: model.clock.now)).font(.body.monospacedDigit())
+        }
+        Menu(L("Quick choice")) {
+            ForEach(Array(Self.quickClockFormats.enumerated()), id: \.offset) { _, format in
+                Button("\(format.placeholderText)   \(ClockFormat.custom.string(from: model.clock.now, custom: format))") {
+                    model.editor.update(itemID, field: "clockCustom") { $0.clockCustom = format }
+                }
+            }
+        }
+        let usesPattern = !custom.pattern.trimmingCharacters(in: .whitespaces).isEmpty
+        Group {
+            Toggle(L("Show date"), isOn: clockField(\.showsDate, custom))
+            if custom.showsDate {
+                Picker(L("Order"), selection: clockField(\.dateOrder, custom)) {
+                    Text(L("Day, month (DD.MM)")).tag(ClockCustomFormat.DateOrder.dayMonthYear)
+                    Text(L("Month, day (MM.DD)")).tag(ClockCustomFormat.DateOrder.monthDayYear)
+                    Text(L("Year first (YY.MM.DD)")).tag(ClockCustomFormat.DateOrder.yearMonthDay)
+                }
+                Picker(L("Year"), selection: clockField(\.year, custom)) {
+                    Text(L("None")).tag(ClockCustomFormat.YearStyle.none)
+                    Text(L("Two digits (YY)")).tag(ClockCustomFormat.YearStyle.twoDigits)
+                    Text(L("Four digits (YYYY)")).tag(ClockCustomFormat.YearStyle.fourDigits)
+                }
+                Picker(L("Date separator"), selection: clockField(\.dateSeparator, custom)) {
+                    ForEach(ClockCustomFormat.dateSeparators, id: \.self) { separator in
+                        Text(separator == " " ? L("Space") : separator).tag(separator)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Toggle(L("Weekday"), isOn: clockField(\.showsWeekday, custom))
+            }
+            Picker(L("Time"), selection: clockField(\.time, custom)) {
+                Text(L("None")).tag(ClockCustomFormat.TimeStyle.none)
+                Text(L("Hours and minutes (HH:MM)")).tag(ClockCustomFormat.TimeStyle.hoursMinutes)
+                Text(L("With seconds (HH:MM:SS)")).tag(ClockCustomFormat.TimeStyle.hoursMinutesSeconds)
+            }
+            if custom.time != .none {
+                Picker(L("Time separator"), selection: clockField(\.timeSeparator, custom)) {
+                    ForEach(ClockCustomFormat.timeSeparators, id: \.self) { Text($0).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Picker(L("Hours"), selection: clockField(\.hourCycle, custom)) {
+                    Text(L("As in macOS")).tag(ClockCustomFormat.HourCycle.system)
+                    Text(L("24-hour")).tag(ClockCustomFormat.HourCycle.twentyFourHour)
+                    Text(L("12-hour (AM/PM)")).tag(ClockCustomFormat.HourCycle.twelveHour)
+                }
+                if custom.showsDate {
+                    Toggle(L("Time before date"), isOn: clockField(\.timeFirst, custom))
+                }
+            }
+        }
+        .disabled(usesPattern)
+        TextField(L("Own pattern (advanced)"), text: clockField(\.pattern, custom), prompt: Text("dd.MM HH:mm:ss"))
+            .font(.body.monospaced())
+        Text(L("Optional. Overrides the options above. dd day, MM month, yy or yyyy year, EEE weekday, HH hours (24 h), h hours (12 h), mm minutes, ss seconds, a AM/PM. Put other letters in 'single quotes'."))
+            .font(.caption).foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private func sliderSections(_ item: TouchBarItemConfig) -> some View {
+        let isVolume = item.kind == .volume
+        let level: Float? = isVolume ? model.volume.state?.volume : model.brightness.brightness
+        Section(isVolume ? L("Volume") : L("Brightness")) {
+            LabeledContent(L("Now")) {
+                Text(isVolume ? VolumeLabel.description(model.volume.state) : BrightnessLabel.description(model.brightness.brightness))
+                    .foregroundStyle(.secondary)
+            }
+            Slider(value: Binding(get: { Double(level ?? 0) }, set: { model.setSystemLevel(item.kind, Float($0)) }), in: 0...1) {
+                Text(L("Level"))
+            } minimumValueLabel: {
+                Image(systemName: isVolume ? "speaker.fill" : "sun.min.fill")
+            } maximumValueLabel: {
+                Image(systemName: isVolume ? "speaker.wave.3.fill" : "sun.max.fill")
+            }
+            .disabled(level == nil || (isVolume && model.volume.state?.canSetVolume == false))
+            LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            iconSizeRows(item)
+            widthRows(item)
+            Text(isVolume
+                 ? L("Drag the slider on the Touch Bar to change the volume of the current output device. It follows changes made with the volume keys or in Control Center.")
+                 : L("Drag the slider on the Touch Bar to change the brightness of the built-in display. It follows the brightness keys and auto-brightness."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     @ViewBuilder
@@ -340,6 +570,8 @@ struct ItemPropertiesView: View {
             }
             Toggle(L("Show percentage"), isOn: binding("showsTitle", \.showsTitle, default: true))
             LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            iconSizeRows(item)
+            widthRows(item)
             Text(L("Updates automatically. On battery power the widget turns orange at 20% and red at 10%."))
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -395,6 +627,8 @@ struct ItemPropertiesView: View {
                 EmptyView()
             }
             LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            if item.icon.source != .none { iconSizeRows(item) }
+            widthRows(item)
         }
 
         Section {
