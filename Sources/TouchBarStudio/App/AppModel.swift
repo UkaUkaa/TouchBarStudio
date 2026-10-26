@@ -95,7 +95,7 @@ final class AppModel {
             guard let self, let item = self.findItem(id) else { return }
             self.perform(item, source: L("Hotkey"))
         }
-        apps.onChange = { [weak self] in self?.refreshTouchBar() }
+        apps.onChange = { [weak self] in self?.frontmostAppChanged() }
         battery.onChange = { [weak self] status in self?.touchBar.updateBattery(status) }
         touchBar.updateBattery(battery.status)
         battery.start()
@@ -144,7 +144,7 @@ final class AppModel {
         touchBar.setSuppressed(!TouchBarVisibility.shouldShow(
             frontmostBundleIdentifier: apps.lastExternalApp?.bundleIdentifier,
             frontmostIsSelf: apps.frontmostIsSelf,
-            settings: config.settings,
+            closedInApp: closedInApp,
             providerShowsOverOtherApps: providerShowsOverOtherApps))
         touchBar.show(profile, force: force)
     }
@@ -152,33 +152,44 @@ final class AppModel {
     /// Menu "Show Layout on Touch Bar": also brings it back in the current app if it was closed there.
     func showTouchBar() {
         touchBarHidden = false
-        if !apps.frontmostIsSelf, let app = apps.lastExternalApp?.bundleIdentifier {
-            TouchBarVisibility.unhide(in: app, settings: &config.settings)
-        }
+        closedInApp = nil
         touchBar.reshow()
         refreshTouchBar(force: true)
     }
 
-    // MARK: Per-app hiding (✕ in experimental mode)
+    // MARK: Closing in the current app (✕ in experimental mode)
 
-    /// The external app in front, if the layout is currently hidden there.
+    /// App in which the user tapped ✕ during the current visit. Not saved: it is cleared as
+    /// soon as another app comes to the front, so the layout is back on the next visit.
+    private(set) var closedInApp: String?
+
+    /// The external app in front, if the layout is currently closed there.
     var frontmostHiddenApp: ApplicationProfileManager.AppInfo? {
         guard providerShowsOverOtherApps, !apps.frontmostIsSelf, let app = apps.lastExternalApp,
-              config.settings.hiddenInApps.contains(app.bundleIdentifier) else { return nil }
+              app.bundleIdentifier == closedInApp else { return nil }
         return app
     }
 
-    func showLayout(inApp bundleIdentifier: String) {
-        TouchBarVisibility.unhide(in: bundleIdentifier, settings: &config.settings)
+    /// Brings the layout back in the current app without leaving it.
+    func showLayoutInCurrentApp() {
+        closedInApp = nil
+        refreshTouchBar()
+    }
+
+    private func frontmostAppChanged() {
+        let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        closedInApp = TouchBarVisibility.closedApp(after: front, closedInApp: closedInApp)
+        refreshTouchBar()
     }
 
     /// The system hid our bar without us asking. With the experimental provider that means
-    /// the user tapped ✕: remember the app so its own Touch Bar stays there.
+    /// the user tapped ✕: keep the app's own Touch Bar until they switch to another app.
     private func touchBarClosedBySystem() {
         guard providerShowsOverOtherApps, !displaysAsleep, !CGSession.isScreenLocked,
               let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
               front != Bundle.main.bundleIdentifier, front != "com.apple.loginwindow" else { return }
-        TouchBarVisibility.hide(in: front, settings: &config.settings)
+        closedInApp = front
+        refreshTouchBar()
     }
 
     @ObservationIgnored private var displaysAsleep = false

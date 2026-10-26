@@ -7,16 +7,25 @@ import TouchBarStudioCore
 /// no Screen Recording permission. Not compiled into release builds.
 @MainActor
 enum DebugSnapshots {
+    private static func describe(_ bar: NSTouchBar?) -> String {
+        guard let bar else { return "nil" }
+        return "\(bar.defaultItemIdentifiers.count) ids, visible=\(bar.isVisible), delegate=\(bar.delegate.map { "\(type(of: $0))" } ?? "nil")"
+    }
+
+    nonisolated private static func append(_ text: String, to path: String) {
+        if let handle = FileHandle(forWritingAtPath: path) {
+            handle.seekToEndOfFile(); handle.write(Data(text.utf8)); handle.closeFile()
+        } else {
+            try? text.write(toFile: path, atomically: true, encoding: .utf8)
+        }
+    }
+
     /// With `TBS_DEBUG_TOUCHBAR` set, writes the responder chain and each responder's touch
     /// bar to that file every 2 s, to diagnose an empty Touch Bar.
     static func traceTouchBarIfRequested() {
         guard let path = ProcessInfo.processInfo.environment["TBS_DEBUG_TOUCHBAR"] else { return }
         Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
             MainActor.assumeIsolated {
-                func describe(_ bar: NSTouchBar?) -> String {
-                    guard let bar else { return "nil" }
-                    return "\(bar.defaultItemIdentifiers.count) ids, visible=\(bar.isVisible), delegate=\(bar.delegate.map { "\(type(of: $0))" } ?? "nil")"
-                }
                 var lines = ["\(Date()) active=\(NSApp.isActive) key=\(NSApp.keyWindow.map { "\(type(of: $0)) '\($0.title)'" } ?? "nil")"]
                 var responder: NSResponder? = NSApp.keyWindow?.firstResponder
                 while let current = responder {
@@ -24,12 +33,7 @@ enum DebugSnapshots {
                     responder = current.nextResponder
                 }
                 lines.append("  NSApp.touchBar: \(describe(NSApp.touchBar))")
-                let text = lines.joined(separator: "\n") + "\n"
-                if let handle = FileHandle(forWritingAtPath: path) {
-                    handle.seekToEndOfFile(); handle.write(Data(text.utf8)); handle.closeFile()
-                } else {
-                    try? text.write(toFile: path, atomically: true, encoding: .utf8)
-                }
+                append(lines.joined(separator: "\n") + "\n", to: path)
             }
         }
     }
@@ -67,14 +71,7 @@ enum DebugSnapshots {
     /// bar plus app switches, to learn how the system close button, fn and locking behave.
     static func traceVisibilityIfRequested(model: AppModel) {
         guard let path = ProcessInfo.processInfo.environment["TBS_DEBUG_VISIBILITY"] else { return }
-        func log(_ text: String) {
-            let line = "\(Date().timeIntervalSince1970) \(text)\n"
-            if let handle = FileHandle(forWritingAtPath: path) {
-                handle.seekToEndOfFile(); handle.write(Data(line.utf8)); handle.closeFile()
-            } else {
-                try? line.write(toFile: path, atomically: true, encoding: .utf8)
-            }
-        }
+        let log: @Sendable (String) -> Void = { text in append("\(Date().timeIntervalSince1970) \(text)\n", to: path) }
         let previous = model.touchBar.provider.onVisibilityChange
         model.touchBar.provider.onVisibilityChange = { visible in
             log("visible=\(visible) front=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "?")")

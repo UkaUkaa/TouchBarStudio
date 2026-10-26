@@ -7,26 +7,19 @@ public enum TouchBarVisibility {
     ///   - frontmostBundleIdentifier: the app in front (other than TouchBar Studio).
     ///   - frontmostIsSelf: TouchBar Studio itself is in front; the layout is always shown
     ///     there so it can be edited and tried out.
-    ///   - providerShowsOverOtherApps: only the experimental provider covers other apps,
-    ///     so per-app hiding only applies to it.
+    ///   - closedInApp: app in which the user tapped ✕ during the current visit. The close
+    ///     only lasts until another app comes to the front (see `closedApp(after:…)`).
+    ///   - providerShowsOverOtherApps: only the experimental provider covers other apps.
     public static func shouldShow(frontmostBundleIdentifier: String?, frontmostIsSelf: Bool,
-                                  settings: AppSettings, providerShowsOverOtherApps: Bool) -> Bool {
-        guard providerShowsOverOtherApps, !frontmostIsSelf, let app = frontmostBundleIdentifier else { return true }
-        return !settings.hiddenInApps.contains(app)
+                                  closedInApp: String?, providerShowsOverOtherApps: Bool) -> Bool {
+        guard providerShowsOverOtherApps, !frontmostIsSelf, let app = frontmostBundleIdentifier, let closed = closedInApp else { return true }
+        return app != closed
     }
 
-    /// Records that the user closed the layout in `bundleIdentifier`. Returns false if nothing changed.
-    @discardableResult
-    public static func hide(in bundleIdentifier: String, settings: inout AppSettings) -> Bool {
-        guard !bundleIdentifier.isEmpty, !settings.hiddenInApps.contains(bundleIdentifier) else { return false }
-        settings.hiddenInApps.append(bundleIdentifier)
-        return true
-    }
-
-    @discardableResult
-    public static func unhide(in bundleIdentifier: String, settings: inout AppSettings) -> Bool {
-        let before = settings.hiddenInApps.count
-        settings.hiddenInApps.removeAll { $0 == bundleIdentifier }
-        return settings.hiddenInApps.count != before
+    /// The closed-in app after the frontmost app changed: kept while the same app stays in
+    /// front, forgotten as soon as any other app (including TouchBar Studio) is activated.
+    public static func closedApp(after activatedBundleIdentifier: String?, closedInApp: String?) -> String? {
+        guard let closedInApp, activatedBundleIdentifier == closedInApp else { return nil }
+        return closedInApp
     }
 }

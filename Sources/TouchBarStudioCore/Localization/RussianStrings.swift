@@ -502,14 +502,10 @@ enum RussianStrings {
         "No microphone operation selected.": "Не выбрана операция с микрофоном.",
         "%@: microphone operation is missing.": "%@: не выбрана операция с микрофоном.",
 
-        // MARK: Hidden in apps
+        // MARK: Closing in the current app
         "Show Layout in %@": "Показать раскладку в «%@»",
-        "Hidden in these apps (closed with ✕):": "Скрыта в этих приложениях (закрыта через ✕):",
-        "Show again": "Показать снова",
-        "Hidden in Apps": "Скрыта в приложениях",
-        "Tap ✕ on the Touch Bar while an app is in front to keep that app's own Touch Bar there. TouchBar Studio remembers it; your layout still appears in every other app.":
-            "Нажмите ✕ на Touch Bar, пока приложение на переднем плане, — и в нём останется его собственная Touch Bar. TouchBar Studio запомнит это; в остальных приложениях ваша раскладка будет показываться как обычно.",
-        "No apps yet.": "Пока нет.",
+        "✕ hides your layout in the app that is in front, until you switch to another app. Next time you return to it, the layout is back.":
+            "✕ скрывает раскладку в приложении на переднем плане, пока вы не переключитесь в другое. Когда вернётесь, раскладка снова будет на месте.",
 
         // MARK: Errors
         "This button has no action assigned.": "Этой кнопке не назначено действие.",

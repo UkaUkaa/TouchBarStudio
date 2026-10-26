@@ -23,9 +23,6 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var keepControlStrip: Bool
     public var enableGlobalHotKeys: Bool
     public var language: AppLanguage
-    /// Apps in which the user closed the layout with the system ✕ button (experimental
-    /// mode). The app's own Touch Bar is shown there until the user brings ours back.
-    public var hiddenInApps: [String]
 
     public init(
         providerKind: TouchBarProviderKind = .application,
@@ -36,8 +33,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         shellTimeoutSeconds: Int = 30,
         keepControlStrip: Bool = true,
         enableGlobalHotKeys: Bool = true,
-        language: AppLanguage = .system,
-        hiddenInApps: [String] = []
+        language: AppLanguage = .system
     ) {
         self.providerKind = providerKind
         self.autoSwitchProfiles = autoSwitchProfiles
@@ -48,12 +44,11 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.keepControlStrip = keepControlStrip
         self.enableGlobalHotKeys = enableGlobalHotKeys
         self.language = language
-        self.hiddenInApps = hiddenInApps
     }
 
     enum CodingKeys: String, CodingKey {
         case providerKind, autoSwitchProfiles, manualProfileID, allowShellCommands, allowAppleScript
-        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language, hiddenInApps
+        case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language
     }
 
     public init(from decoder: Decoder) throws {
@@ -68,7 +63,6 @@ public struct AppSettings: Codable, Hashable, Sendable {
         keepControlStrip = try c.decodeIfPresent(Bool.self, forKey: .keepControlStrip) ?? d.keepControlStrip
         enableGlobalHotKeys = try c.decodeIfPresent(Bool.self, forKey: .enableGlobalHotKeys) ?? d.enableGlobalHotKeys
         language = (try? c.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? d.language
-        hiddenInApps = (try? c.decodeIfPresent([String].self, forKey: .hiddenInApps)) ?? d.hiddenInApps
     }
 }
 

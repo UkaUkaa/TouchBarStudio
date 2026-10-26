@@ -21,13 +21,12 @@ has two interchangeable integrations behind the `TouchBarProvider` protocol:
 The experimental mode is off by default and asks for confirmation before it turns on.
 
 **Closing the layout in one app (✕).** In experimental mode, tapping the system ✕ button
-while an app is in front hides the layout *in that app only*: its own Touch Bar stays
-there, also after switching away and back, and the layout keeps appearing in every other
-app. The list is saved (`settings.hiddenInApps`) and can be undone in Settings › Hidden in
-Apps, on the Dashboard, via the menu bar item "Show Layout in <App>", or with Touch Bar ›
-Show Layout on Touch Bar while that app is in front. The close is detected through KVO on
-`NSTouchBar.visible`; on the test Mac holding fn did not change it, and events while the
-display sleeps, the screen is locked or the login window is in front are ignored.
+hides the layout in the app that is in front, so that app's own Touch Bar is shown. This
+lasts only until another app comes to the front: the layout is shown there, and when you
+return to the first app it is back as well (nothing is remembered). While still in that
+app, the menu bar item "Show Layout in <App>" brings it back. The close is detected through
+KVO on `NSTouchBar.visible`; on the test Mac holding fn did not change it, and events while
+the display sleeps, the screen is locked or the login window is in front are ignored.
 It is resolved at runtime with `class_getClassMethod`: if a future macOS release removes
 the selector, the option is disabled instead of crashing. With "Keep the system Control
 Strip" on (the default), macOS adds a close (✕) button and keeps brightness/volume.
@@ -55,7 +54,7 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Microphone widget toggle (performed in-app exactly as a tap): Core Audio mute read back as 1 by a separate process, widget turns red; second toggle unmutes | ✅ captured + verified |
 | Microphone widget follows a mute set by another process | ✅ captured |
 | Physical finger tap on the microphone widget | Not separately tested (tap delivery itself is verified for buttons) |
-| ✕ in Chrome keeps Chrome's own Touch Bar; layout returns in Terminal and Finder; back in Chrome (twice) Chrome's bar stays | ✅ user tapped ✕, rest captured |
+| ✕ in Chrome shows Chrome's own Touch Bar; switching to Terminal shows the layout; back in Chrome the layout is shown again | ✅ user tapped ✕, rest captured |
 | Holding fn does not count as closing (bar visibility unchanged, layout returns on release) | ✅ user test + trace |
 | Keyboard-shortcut and media-key actions with Accessibility granted to the bundled app | ⚠️ Not verified on hardware (permission not granted during testing). Covered by unit tests with mocked services only. |
 | AppleScript and shell actions from a Touch Bar tap | ⚠️ Shell runner verified by unit tests against real `/bin/zsh`; not tapped on hardware |
@@ -140,7 +139,7 @@ created from them; buttons you've already created keep the titles you gave them.
 ```sh
 scripts/build-app.sh            # release build → build/TouchBar Studio.app
 scripts/build-app.sh debug      # debug build
-scripts/test.sh                 # unit tests (Swift Testing, 72 tests)
+scripts/test.sh                 # unit tests (Swift Testing, 71 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```

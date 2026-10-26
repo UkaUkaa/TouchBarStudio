@@ -159,7 +159,7 @@ struct MenuBarContent: View {
                 set: { model.config.settings.autoSwitchProfiles = $0 }))
         }
         if let app = model.frontmostHiddenApp {
-            Button(L("Show Layout in %@", app.name)) { model.showLayout(inApp: app.bundleIdentifier) }
+            Button(L("Show Layout in %@", app.name)) { model.showLayoutInCurrentApp() }
         }
         Button(model.touchBarHidden ? L("Show Layout on Touch Bar") : L("Hide Layout from Touch Bar")) {
             model.touchBarHidden ? model.showTouchBar() : model.hideTouchBar()
