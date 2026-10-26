@@ -87,11 +87,12 @@ final class SystemModalTouchBarProvider: TouchBarProvider {
         presented = touchBar
         if let previous, previous !== touchBar { dismissBar(previous) }
         // NSTouchBar posts KVO for `visible` itself (+automaticallyNotifiesObserversOfVisible).
-        visibilityObservation = touchBar.observe(\.isVisible, options: [.new]) { [weak self] bar, _ in
-            let visible = bar.isVisible
+        let observed = ObjectIdentifier(touchBar)
+        visibilityObservation = touchBar.observe(\.isVisible, options: [.new]) { [weak self] _, change in
+            guard let visible = change.newValue else { return }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    guard let self, bar === self.presented else { return }
+                    guard let self, let presented = self.presented, ObjectIdentifier(presented) == observed else { return }
                     self.onVisibilityChange?(visible)
                 }
             }
