@@ -41,6 +41,9 @@ struct DashboardView: View {
                     .font(.callout)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if model.providerShowsOverOtherApps && !model.config.settings.hiddenInApps.isEmpty {
+                HiddenAppsList(compact: true)
+            }
             HStack {
                 Button(model.touchBarHidden ? L("Show on Touch Bar") : L("Refresh Touch Bar")) { model.showTouchBar() }
                 if !model.touchBarHidden { Button(L("Hide")) { model.hideTouchBar() } }
@@ -151,6 +154,28 @@ struct ActivityLogView: View {
                     Divider()
                 }
                 Button(L("Clear")) { model.clearActivity() }.buttonStyle(.link)
+            }
+        }
+    }
+}
+
+/// Apps where the user closed the layout with ✕, with a way to bring it back.
+struct HiddenAppsList: View {
+    @Environment(AppModel.self) private var model
+    var compact = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(L("Hidden in these apps (closed with ✕):")).font(compact ? .caption : .callout)
+                .foregroundStyle(.secondary)
+            ForEach(model.config.settings.hiddenInApps, id: \.self) { id in
+                HStack {
+                    AppIconView(bundleIdentifier: id, size: 16)
+                    Text(IconProvider.appName(bundleIdentifier: id) ?? id)
+                    Spacer()
+                    Button(L("Show again")) { model.showLayout(inApp: id) }
+                        .buttonStyle(.link)
+                }
             }
         }
     }

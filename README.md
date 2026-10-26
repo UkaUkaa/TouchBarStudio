@@ -19,6 +19,15 @@ has two interchangeable integrations behind the `TouchBarProvider` protocol:
 | **Over all apps (experimental)**, opt-in | Undocumented `+[NSTouchBar presentSystemModalTouchBar:placement:systemTrayItemIdentifier:]`, the API used by Pock and MTMR | Over every app | Applied automatically when the frontmost app changes |
 
 The experimental mode is off by default and asks for confirmation before it turns on.
+
+**Closing the layout in one app (✕).** In experimental mode, tapping the system ✕ button
+while an app is in front hides the layout *in that app only*: its own Touch Bar stays
+there, also after switching away and back, and the layout keeps appearing in every other
+app. The list is saved (`settings.hiddenInApps`) and can be undone in Settings › Hidden in
+Apps, on the Dashboard, via the menu bar item "Show Layout in <App>", or with Touch Bar ›
+Show Layout on Touch Bar while that app is in front. The close is detected through KVO on
+`NSTouchBar.visible`; on the test Mac holding fn did not change it, and events while the
+display sleeps, the screen is locked or the login window is in front are ignored.
 It is resolved at runtime with `class_getClassMethod`: if a future macOS release removes
 the selector, the option is disabled instead of crashing. With "Keep the system Control
 Strip" on (the default), macOS adds a close (✕) button and keeps brightness/volume.
@@ -46,6 +55,8 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Microphone widget toggle (performed in-app exactly as a tap): Core Audio mute read back as 1 by a separate process, widget turns red; second toggle unmutes | ✅ captured + verified |
 | Microphone widget follows a mute set by another process | ✅ captured |
 | Physical finger tap on the microphone widget | Not separately tested (tap delivery itself is verified for buttons) |
+| ✕ in Chrome keeps Chrome's own Touch Bar; layout returns in Terminal and Finder; back in Chrome (twice) Chrome's bar stays | ✅ user tapped ✕, rest captured |
+| Holding fn does not count as closing (bar visibility unchanged, layout returns on release) | ✅ user test + trace |
 | Keyboard-shortcut and media-key actions with Accessibility granted to the bundled app | ⚠️ Not verified on hardware (permission not granted during testing). Covered by unit tests with mocked services only. |
 | AppleScript and shell actions from a Touch Bar tap | ⚠️ Shell runner verified by unit tests against real `/bin/zsh`; not tapped on hardware |
 
@@ -129,7 +140,7 @@ created from them; buttons you've already created keep the titles you gave them.
 ```sh
 scripts/build-app.sh            # release build → build/TouchBar Studio.app
 scripts/build-app.sh debug      # debug build
-scripts/test.sh                 # unit tests (Swift Testing, 67 tests)
+scripts/test.sh                 # unit tests (Swift Testing, 72 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```
@@ -182,8 +193,6 @@ Toolchain notes (Command Line Tools only):
   Mac (reproduced 2/2; the next launch is fine). Switching modes inside a running app is
   not affected.
 - Experimental mode depends on an undocumented API and may break in any macOS update.
-  If you tap its ✕ close button, the layout returns on the next profile change or via
-  **Touch Bar › Show Layout on Touch Bar** (also in the menu bar extra).
 - In standard mode, a keyboard-shortcut button without a target app sends its keys to
   TouchBar Studio itself (the editor warns about this).
 - Item widths in the preview are estimates calibrated against hardware captures of a 13"

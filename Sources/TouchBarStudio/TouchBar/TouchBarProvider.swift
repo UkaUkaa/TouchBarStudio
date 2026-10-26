@@ -11,6 +11,9 @@ protocol TouchBarProvider: AnyObject {
     var showsOverOtherApps: Bool { get }
     func present(_ touchBar: NSTouchBar)
     func dismiss()
+    /// Called when the presented bar's visibility changes for a reason other than
+    /// `present`/`dismiss` (e.g. the user tapped the system close button).
+    var onVisibilityChange: ((Bool) -> Void)? { get set }
 }
 
 extension TouchBarProviderKind {
@@ -37,6 +40,7 @@ extension TouchBarProviderKind {
 final class ApplicationTouchBarProvider: TouchBarProvider {
     let kind = TouchBarProviderKind.application
     let showsOverOtherApps = false
+    var onVisibilityChange: ((Bool) -> Void)?
 
     func present(_ touchBar: NSTouchBar) {
         NSApp.touchBar = touchBar
@@ -57,7 +61,9 @@ final class SystemModalTouchBarProvider: TouchBarProvider {
 
     /// 0 keeps the system Control Strip and shows a close button; 1 takes the whole bar.
     var keepControlStrip: Bool
+    var onVisibilityChange: ((Bool) -> Void)?
     private var presented: NSTouchBar?
+    private var visibilityObservation: NSKeyValueObservation?
 
     private static let presentSelector = NSSelectorFromString("presentSystemModalTouchBar:placement:systemTrayItemIdentifier:")
     private static let dismissSelector = NSSelectorFromString("dismissSystemModalTouchBar:")
@@ -76,12 +82,27 @@ final class SystemModalTouchBarProvider: TouchBarProvider {
         typealias Present = @convention(c) (AnyClass, Selector, NSTouchBar, Int64, NSString?) -> Void
         let fn = unsafeBitCast(method_getImplementation(method), to: Present.self)
         let previous = presented
+        visibilityObservation = nil
         fn(NSTouchBar.self, Self.presentSelector, touchBar, keepControlStrip ? 0 : 1, nil)
         presented = touchBar
         if let previous, previous !== touchBar { dismissBar(previous) }
+        // NSTouchBar posts KVO for `visible` itself (+automaticallyNotifiesObserversOfVisible).
+        visibilityObservation = touchBar.observe(\.isVisible, options: [.new]) { [weak self] bar, _ in
+            let visible = bar.isVisible
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self, bar === self.presented else { return }
+                    self.onVisibilityChange?(visible)
+                }
+            }
+        }
     }
 
+    /// Visibility of the presented bar as AppKit reports it; nil when nothing is presented.
+    var presentedBarIsVisible: Bool? { presented?.isVisible }
+
     func dismiss() {
+        visibilityObservation = nil
         if let presented { dismissBar(presented) }
         presented = nil
     }

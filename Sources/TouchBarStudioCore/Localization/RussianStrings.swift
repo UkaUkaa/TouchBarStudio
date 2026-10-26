@@ -295,8 +295,8 @@ enum RussianStrings {
         "Mode": "Режим",
         "Experimental mode unavailable on this macOS version": "Экспериментальный режим недоступен в этой версии macOS",
         "Keep the system Control Strip and a close button": "Оставить системную полосу Control Strip и кнопку закрытия",
-        "Off: your layout takes the whole Touch Bar (no brightness/volume controls). The close button hides the layout until you switch apps or choose Show on Touch Bar.":
-            "Если выключено, раскладка занимает всю Touch Bar (без яркости и громкости). Кнопка закрытия скрывает раскладку до переключения приложения или команды «Показать на Touch Bar».",
+        "Off: your layout takes the whole Touch Bar (no brightness/volume controls) and there is no close button.":
+            "Если выключено, раскладка занимает всю Touch Bar (без яркости и громкости), и кнопки закрытия нет.",
         "Switch profiles automatically by frontmost app": "Переключать профили по активному приложению",
         "Enable global hotkeys for buttons": "Включить глобальные клавиши для кнопок",
         "Grant Access…": "Предоставить доступ…",
@@ -501,6 +501,15 @@ enum RussianStrings {
         "macOS refused to change the microphone (Core Audio error %d).": "macOS не дала изменить микрофон (ошибка Core Audio %d).",
         "No microphone operation selected.": "Не выбрана операция с микрофоном.",
         "%@: microphone operation is missing.": "%@: не выбрана операция с микрофоном.",
+
+        // MARK: Hidden in apps
+        "Show Layout in %@": "Показать раскладку в «%@»",
+        "Hidden in these apps (closed with ✕):": "Скрыта в этих приложениях (закрыта через ✕):",
+        "Show again": "Показать снова",
+        "Hidden in Apps": "Скрыта в приложениях",
+        "Tap ✕ on the Touch Bar while an app is in front to keep that app's own Touch Bar there. TouchBar Studio remembers it; your layout still appears in every other app.":
+            "Нажмите ✕ на Touch Bar, пока приложение на переднем плане, — и в нём останется его собственная Touch Bar. TouchBar Studio запомнит это; в остальных приложениях ваша раскладка будет показываться как обычно.",
+        "No apps yet.": "Пока нет.",
 
         // MARK: Errors
         "This button has no action assigned.": "Этой кнопке не назначено действие.",

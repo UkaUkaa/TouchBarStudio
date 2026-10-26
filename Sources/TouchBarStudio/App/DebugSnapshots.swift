@@ -63,6 +63,40 @@ enum DebugSnapshots {
         }
     }
 
+    /// With `TBS_DEBUG_VISIBILITY=<file>`, appends every visibility change of the presented
+    /// bar plus app switches, to learn how the system close button, fn and locking behave.
+    static func traceVisibilityIfRequested(model: AppModel) {
+        guard let path = ProcessInfo.processInfo.environment["TBS_DEBUG_VISIBILITY"] else { return }
+        func log(_ text: String) {
+            let line = "\(Date().timeIntervalSince1970) \(text)\n"
+            if let handle = FileHandle(forWritingAtPath: path) {
+                handle.seekToEndOfFile(); handle.write(Data(line.utf8)); handle.closeFile()
+            } else {
+                try? line.write(toFile: path, atomically: true, encoding: .utf8)
+            }
+        }
+        let previous = model.touchBar.provider.onVisibilityChange
+        model.touchBar.provider.onVisibilityChange = { visible in
+            log("visible=\(visible) front=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "?")")
+            previous?(visible)
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { note in
+            let id = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier ?? "?"
+            log("activate \(id)")
+        }
+        log("trace started, provider=\(model.touchBar.provider.kind.rawValue)")
+        var lastPolled: Bool??
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { _ in
+            MainActor.assumeIsolated {
+                let polled = (model.touchBar.provider as? SystemModalTouchBarProvider)?.presentedBarIsVisible
+                if lastPolled == nil || lastPolled! != polled {
+                    log("poll isVisible=\(polled.map { "\($0)" } ?? "none") front=\(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "?")")
+                    lastPolled = polled
+                }
+            }
+        }
+    }
+
     static func runIfRequested(model: AppModel) {
         guard let dir = ProcessInfo.processInfo.environment["TBS_SNAPSHOT_DIR"] else { return }
         Task { @MainActor in

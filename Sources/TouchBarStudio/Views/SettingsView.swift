@@ -53,13 +53,26 @@ struct SettingsView: View {
                 }
                 if model.config.settings.providerKind == .systemModalExperimental {
                     Toggle(L("Keep the system Control Strip and a close button"), isOn: setting(\.keepControlStrip))
-                    Text(L("Off: your layout takes the whole Touch Bar (no brightness/volume controls). The close button hides the layout until you switch apps or choose Show on Touch Bar."))
+                    Text(L("Off: your layout takes the whole Touch Bar (no brightness/volume controls) and there is no close button."))
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Toggle(L("Switch profiles automatically by frontmost app"), isOn: setting(\.autoSwitchProfiles))
                     .disabled(!model.providerShowsOverOtherApps)
                 Toggle(L("Enable global hotkeys for buttons"), isOn: setting(\.enableGlobalHotKeys))
+            }
+
+            if model.config.settings.providerKind == .systemModalExperimental {
+                Section(L("Hidden in Apps")) {
+                    Text(L("Tap ✕ on the Touch Bar while an app is in front to keep that app's own Touch Bar there. TouchBar Studio remembers it; your layout still appears in every other app."))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if model.config.settings.hiddenInApps.isEmpty {
+                        Text(L("No apps yet.")).foregroundStyle(.secondary)
+                    } else {
+                        HiddenAppsList()
+                    }
+                }
             }
 
             Section(L("Permissions")) {

@@ -89,6 +89,8 @@ final class AppModel {
     /// Called once the app has finished launching.
     func start() {
         touchBar.onTap = { [weak self] item in self?.perform(item, source: L("Touch Bar")) }
+        touchBar.onClosedBySystem = { [weak self] in self?.touchBarClosedBySystem() }
+        observeDisplaySleep()
         HotKeyCenter.shared.onHotKey = { [weak self] id in
             guard let self, let item = self.findItem(id) else { return }
             self.perform(item, source: L("Hotkey"))
@@ -139,13 +141,59 @@ final class AppModel {
     func refreshTouchBar(force: Bool = false) {
         let profile = activeProfile
         displayedProfileID = profile.id
+        touchBar.setSuppressed(!TouchBarVisibility.shouldShow(
+            frontmostBundleIdentifier: apps.lastExternalApp?.bundleIdentifier,
+            frontmostIsSelf: apps.frontmostIsSelf,
+            settings: config.settings,
+            providerShowsOverOtherApps: providerShowsOverOtherApps))
         touchBar.show(profile, force: force)
     }
 
+    /// Menu "Show Layout on Touch Bar": also brings it back in the current app if it was closed there.
     func showTouchBar() {
         touchBarHidden = false
+        if !apps.frontmostIsSelf, let app = apps.lastExternalApp?.bundleIdentifier {
+            TouchBarVisibility.unhide(in: app, settings: &config.settings)
+        }
         touchBar.reshow()
         refreshTouchBar(force: true)
+    }
+
+    // MARK: Per-app hiding (✕ in experimental mode)
+
+    /// The external app in front, if the layout is currently hidden there.
+    var frontmostHiddenApp: ApplicationProfileManager.AppInfo? {
+        guard providerShowsOverOtherApps, !apps.frontmostIsSelf, let app = apps.lastExternalApp,
+              config.settings.hiddenInApps.contains(app.bundleIdentifier) else { return nil }
+        return app
+    }
+
+    func showLayout(inApp bundleIdentifier: String) {
+        TouchBarVisibility.unhide(in: bundleIdentifier, settings: &config.settings)
+    }
+
+    /// The system hid our bar without us asking. With the experimental provider that means
+    /// the user tapped ✕: remember the app so its own Touch Bar stays there.
+    private func touchBarClosedBySystem() {
+        guard providerShowsOverOtherApps, !displaysAsleep, !CGSession.isScreenLocked,
+              let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+              front != Bundle.main.bundleIdentifier, front != "com.apple.loginwindow" else { return }
+        TouchBarVisibility.hide(in: front, settings: &config.settings)
+    }
+
+    @ObservationIgnored private var displaysAsleep = false
+
+    private func observeDisplaySleep() {
+        let center = NSWorkspace.shared.notificationCenter
+        for (name, asleep) in [(NSWorkspace.screensDidSleepNotification, true), (NSWorkspace.screensDidWakeNotification, false),
+                               (NSWorkspace.sessionDidResignActiveNotification, true), (NSWorkspace.sessionDidBecomeActiveNotification, false)] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.displaysAsleep = asleep
+                    if !asleep { self?.refreshTouchBar() }
+                }
+            }
+        }
     }
 
     func hideTouchBar() {
@@ -366,5 +414,13 @@ final class AppModel {
                 saveError = L("Launch at login could not be changed: %@", error.localizedDescription)
             }
         }
+    }
+}
+
+enum CGSession {
+    /// Whether the login session's screen is locked (Quartz session dictionary; public CG API).
+    static var isScreenLocked: Bool {
+        guard let info = CGSessionCopyCurrentDictionary() as? [String: Any] else { return false }
+        return (info["CGSSessionScreenIsLocked"] as? Bool) ?? false
     }
 }

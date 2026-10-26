@@ -16,49 +16,94 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
     private var battery: BatteryStatus?
     /// Latest microphone state for microphone widgets.
     private var microphone: MicrophoneState?
+    /// Hidden by the user from the menu ("Hide Layout from Touch Bar").
     private var isSuspended = false
+    /// Not wanted in the current app (the user closed it there with ✕).
+    private var isSuppressed = false
+    /// Whether our bar is actually on screen as far as we know.
+    private var isPresented = false
 
     /// Called when a button on the physical Touch Bar is tapped.
     var onTap: ((TouchBarItemConfig) -> Void)?
+    /// Called when the system hid our bar without us asking (the user tapped ✕).
+    var onClosedBySystem: (() -> Void)?
 
     init(provider: TouchBarProvider) {
         self.provider = provider
+        super.init()
+        observeVisibility(of: provider)
     }
 
     func setProvider(_ newProvider: TouchBarProvider) {
+        provider.onVisibilityChange = nil
         provider.dismiss()
+        isPresented = false
         provider = newProvider
+        observeVisibility(of: newProvider)
         if let profile = displayedProfile {
             displayedProfile = nil
             show(profile)
         }
     }
 
-    /// Shows `profile`; rebuilds the bar only when its content changed.
-    func show(_ profile: Profile, force: Bool = false) {
-        guard force || profile != displayedProfile || touchBar == nil else { return }
-        displayedProfile = profile
-        items = Dictionary(profile.items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        buttons.removeAll()
-
-        let bar = NSTouchBar()
-        bar.delegate = self
-        bar.defaultItemIdentifiers = profile.items.map { item in
-            item.kind == .flexibleSpace ? .flexibleSpace : NSTouchBarItem.Identifier(Self.itemPrefix + item.id.uuidString)
+    private func observeVisibility(of provider: TouchBarProvider) {
+        provider.onVisibilityChange = { [weak self] visible in
+            guard let self, !visible, self.isPresented else { return }
+            self.isPresented = false
+            self.onClosedBySystem?()
         }
-        touchBar = bar
-        if !isSuspended { provider.present(bar) }
     }
 
-    /// Re-presents the current bar (e.g. after the user closed the system-modal bar).
+    /// Shows `profile`; rebuilds the bar only when its content changed.
+    func show(_ profile: Profile, force: Bool = false) {
+        var rebuilt = false
+        if force || profile != displayedProfile || touchBar == nil {
+            displayedProfile = profile
+            items = Dictionary(profile.items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            buttons.removeAll()
+            let bar = NSTouchBar()
+            bar.delegate = self
+            bar.defaultItemIdentifiers = profile.items.map { item in
+                item.kind == .flexibleSpace ? .flexibleSpace : NSTouchBarItem.Identifier(Self.itemPrefix + item.id.uuidString)
+            }
+            touchBar = bar
+            rebuilt = true
+        }
+        updatePresentation(forcePresent: rebuilt)
+    }
+
+    /// Whether our layout is wanted for the current app. Switching to an app where the
+    /// user closed it takes it off; switching anywhere else brings it back.
+    func setSuppressed(_ suppressed: Bool) {
+        guard suppressed != isSuppressed else {
+            updatePresentation(forcePresent: false)
+            return
+        }
+        isSuppressed = suppressed
+        updatePresentation(forcePresent: false)
+    }
+
+    private func updatePresentation(forcePresent: Bool) {
+        let wanted = !isSuspended && !isSuppressed
+        if !wanted {
+            if isPresented { provider.dismiss() }
+            isPresented = false
+            return
+        }
+        guard let touchBar, forcePresent || !isPresented else { return }
+        provider.present(touchBar)
+        isPresented = true
+    }
+
+    /// Re-presents the current bar (menu "Show Layout on Touch Bar").
     func reshow() {
         isSuspended = false
-        if let touchBar { provider.present(touchBar) }
+        updatePresentation(forcePresent: true)
     }
 
     func hide() {
         isSuspended = true
-        provider.dismiss()
+        updatePresentation(forcePresent: false)
     }
 
     var isHidden: Bool { isSuspended }
