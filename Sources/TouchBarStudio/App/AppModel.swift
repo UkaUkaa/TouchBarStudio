@@ -57,6 +57,7 @@ final class AppModel {
     let apps = ApplicationProfileManager()
     let permissions = PermissionManager()
     let battery = BatteryMonitor()
+    let microphone = MicrophoneMonitor()
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     /// Opens the main window (provided by the SwiftUI scene).
     @ObservationIgnored var openMainWindow: (() -> Void)?
@@ -96,6 +97,9 @@ final class AppModel {
         battery.onChange = { [weak self] status in self?.touchBar.updateBattery(status) }
         touchBar.updateBattery(battery.status)
         battery.start()
+        microphone.onChange = { [weak self] state in self?.touchBar.updateMicrophone(state) }
+        touchBar.updateMicrophone(microphone.state)
+        microphone.start()
         apps.start()
         refreshTouchBar()
         registerHotKeys()
@@ -158,7 +162,12 @@ final class AppModel {
             let context = ExecutionContext(associatedBundleIdentifier: item.associatedBundleIdentifier,
                                            source: "\(source) · \(item.title.isEmpty ? item.action.summary : item.title)")
             let result = await executor.run(item.action, context: context)
-            touchBar.flash(itemID: item.id, success: result.succeeded)
+            // Core Audio notifies too, but refresh right away so the widget flips immediately.
+            microphone.refresh()
+            // The microphone widget's new colour is its own feedback; only flash on failure.
+            if !(item.kind == .microphone && result.succeeded) {
+                touchBar.flash(itemID: item.id, success: result.succeeded)
+            }
             activity = executor.activity
         }
     }
@@ -167,6 +176,7 @@ final class AppModel {
     @discardableResult
     func test(_ action: ActionConfig, associatedBundleIdentifier: String?) async -> Result<String?, ActionError> {
         let result = await executor.run(action, context: ExecutionContext(associatedBundleIdentifier: associatedBundleIdentifier, source: L("Test")))
+        microphone.refresh()
         activity = executor.activity
         return result
     }
@@ -264,7 +274,7 @@ final class AppModel {
 
     private func hotKeyEntries(_ c: AppConfiguration) -> [UUID: KeyCombo] {
         var result: [UUID: KeyCombo] = [:]
-        for p in c.profiles { for item in p.items where item.kind == .button { if let hk = item.hotKey { result[item.id] = hk } } }
+        for p in c.profiles { for item in p.items where item.isTappable { if let hk = item.hotKey { result[item.id] = hk } } }
         return result
     }
 

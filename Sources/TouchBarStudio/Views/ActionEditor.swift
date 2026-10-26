@@ -86,6 +86,13 @@ struct ActionEditor: View {
             Picker(L("Key"), selection: field(\.mediaKey, default: .playPause)) {
                 ForEach(MediaKey.allCases) { Label($0.title, systemImage: $0.symbolName).tag($0) }
             }
+        case .microphone:
+            Picker(L("Operation"), selection: field(\.microphoneOperation, default: .toggle)) {
+                ForEach(MicrophoneOperation.allCases) { Text($0.title).tag($0) }
+            }
+            if let state = model.microphone.state {
+                Text(MicrophoneLabel.description(state)).font(.caption).foregroundStyle(.secondary)
+            }
         case .sequence:
             sequenceEditor
         }

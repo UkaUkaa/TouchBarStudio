@@ -478,6 +478,30 @@ enum RussianStrings {
         "By default, tapping opens Battery settings. Choose “None” to make it display-only.":
             "По умолчанию нажатие открывает настройки аккумулятора. Выберите «Нет», чтобы виджет только показывал заряд.",
 
+        // MARK: Microphone
+        "Microphone": "Микрофон",
+        "Toggle microphone": "Переключить микрофон",
+        "Mute microphone": "Выключить микрофон",
+        "Unmute microphone": "Включить микрофон",
+        "Microphone muted": "Микрофон выключен",
+        "Microphone on": "Микрофон включён",
+        "Microphone muted: %@": "Микрофон выключен: %@",
+        "Microphone on: %@": "Микрофон включён: %@",
+        "Muted": "Выключен",
+        "Mic on": "Включён",
+        "No microphone": "Нет микрофона",
+        "Operation": "Операция",
+        "Show state text": "Показывать состояние текстом",
+        "Mute or unmute the microphone for all apps (the default input device).":
+            "Выключить или включить микрофон для всех приложений (устройство ввода по умолчанию).",
+        "Mutes the current input device for every app. The widget turns red while the microphone is muted and follows changes made elsewhere (System Settings, other apps, a headset being plugged in).":
+            "Выключает текущее устройство ввода для всех приложений. Пока микрофон выключен, виджет красный; он отслеживает изменения, сделанные в другом месте (Системные настройки, другие приложения, подключение гарнитуры).",
+        "No microphone (audio input device) is available.": "Нет доступного микрофона (устройства ввода звука).",
+        "“%@” does not let apps mute it or change its input volume.": "«%@» не позволяет приложениям выключать его или менять громкость входа.",
+        "macOS refused to change the microphone (Core Audio error %d).": "macOS не дала изменить микрофон (ошибка Core Audio %d).",
+        "No microphone operation selected.": "Не выбрана операция с микрофоном.",
+        "%@: microphone operation is missing.": "%@: не выбрана операция с микрофоном.",
+
         // MARK: Errors
         "This button has no action assigned.": "Этой кнопке не назначено действие.",
         "Invalid action: %@": "Неверное действие: %@",

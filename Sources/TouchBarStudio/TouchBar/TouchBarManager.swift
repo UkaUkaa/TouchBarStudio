@@ -14,6 +14,8 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
     private var items: [UUID: TouchBarItemConfig] = [:]
     /// Latest battery reading, applied to battery widgets as they are created or updated.
     private var battery: BatteryStatus?
+    /// Latest microphone state for microphone widgets.
+    private var microphone: MicrophoneState?
     private var isSuspended = false
 
     /// Called when a button on the physical Touch Bar is tapped.
@@ -68,7 +70,19 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         Task { @MainActor [weak button] in
             try? await Task.sleep(for: .milliseconds(success ? 250 : 900))
             guard let button else { return }
-            if item.kind == .battery { self.applyBattery(to: button, config: item) } else { button.bezelColor = item.color.nsColor }
+            switch item.kind {
+            case .battery: self.applyBattery(to: button, config: item)
+            case .microphone: self.applyMicrophone(to: button, config: item)
+            default: button.bezelColor = item.color.nsColor
+            }
+        }
+    }
+
+    /// Updates microphone widgets in place.
+    func updateMicrophone(_ state: MicrophoneState?) {
+        microphone = state
+        for (id, config) in items where config.kind == .microphone {
+            if let button = buttons[id] { applyMicrophone(to: button, config: config) }
         }
     }
 
@@ -107,6 +121,14 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
             buttons[id] = button
             item.view = button
             item.customizationLabel = L("Battery")
+        case .microphone:
+            let button = NSButton(title: "", target: self, action: #selector(buttonTapped(_:)))
+            button.identifier = NSUserInterfaceItemIdentifier(config.id.uuidString)
+            button.imagePosition = .imageLeading
+            applyMicrophone(to: button, config: config)
+            buttons[id] = button
+            item.view = button
+            item.customizationLabel = L("Microphone")
         case .flexibleSpace:
             return nil
         }
@@ -129,6 +151,24 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
         button.bezelColor = config.color.nsColor
         button.setAccessibilityLabel(config.title.isEmpty ? config.action.summary : config.title)
         return button
+    }
+
+    private func applyMicrophone(to button: NSButton, config: TouchBarItemConfig) {
+        guard let microphone else {
+            button.image = NSImage(systemSymbolName: "mic.slash", accessibilityDescription: nil)
+            button.title = config.showsTitle ? L("No microphone") : ""
+            button.setAccessibilityLabel(L("No microphone"))
+            button.bezelColor = config.color.nsColor
+            return
+        }
+        button.image = NSImage(systemSymbolName: microphone.symbolName, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 16, weight: .regular))
+        button.title = config.showsTitle ? (microphone.isMuted ? L("Muted") : L("Mic on")) : ""
+        // Red when muted, so the state is obvious at a glance.
+        button.bezelColor = microphone.isMuted ? .systemRed : config.color.nsColor
+        let description = microphone.isMuted ? L("Microphone muted: %@", microphone.deviceName) : L("Microphone on: %@", microphone.deviceName)
+        button.setAccessibilityLabel(description)
+        button.toolTip = description
     }
 
     private func applyBattery(to button: NSButton, config: TouchBarItemConfig) {

@@ -49,6 +49,9 @@ public enum ActionRegistry {
         .init(kind: .mediaKey, title: L("Media Key"),
               summary: L("Play/pause, track skipping and volume, like the hardware keys."),
               symbol: "playpause", requirements: [.accessibility]),
+        .init(kind: .microphone, title: L("Microphone"),
+              summary: L("Mute or unmute the microphone for all apps (the default input device)."),
+              symbol: "mic.slash", requirements: []),
         .init(kind: .sequence, title: L("Sequence"),
               summary: L("Run several actions in order; stops at the first failure."),
               symbol: "list.number", requirements: []),
@@ -72,6 +75,7 @@ public enum ActionRegistry {
         case .appCommand: .command("finder.newWindow")
         case .mediaKey: .media(.playPause)
         case .sequence: .sequence([.openApp("com.apple.finder")])
+        case .microphone: .microphone(.toggle)
         }
     }
 }

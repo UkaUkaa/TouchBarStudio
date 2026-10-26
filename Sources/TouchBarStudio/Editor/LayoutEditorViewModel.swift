@@ -26,6 +26,7 @@ struct LayoutComponent: Identifiable, Hashable {
             LayoutComponent(id: "flexibleSpace", title: L("Flexible Space"), symbol: "arrow.left.and.line.vertical.and.arrow.right") { .space(.flexibleSpace) },
         ]
         list.append(LayoutComponent(id: "battery", group: .widget, title: L("Battery"), symbol: "battery.75") { .battery() })
+        list.append(LayoutComponent(id: "microphone", group: .widget, title: L("Microphone"), symbol: "mic.fill") { .microphone() })
         for descriptor in ActionRegistry.descriptors {
             list.append(LayoutComponent(id: "action.\(descriptor.kind.rawValue)", group: .action, title: descriptor.title, symbol: descriptor.symbol) {
                 TouchBarItemConfig(title: descriptor.title, icon: .symbol(descriptor.symbol), action: ActionRegistry.template(for: descriptor.kind))

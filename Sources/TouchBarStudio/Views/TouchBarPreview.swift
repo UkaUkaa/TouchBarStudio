@@ -87,6 +87,13 @@ struct TouchBarPreview: View {
                     .padding(.horizontal, 12)
                     .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
                     .background(RoundedRectangle(cornerRadius: 6).fill(batteryBackground(item)))
+            case .microphone:
+                MicrophoneLabel(state: model.microphone.state, showsTitle: item.showsTitle)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .frame(minWidth: 64, minHeight: 30, maxHeight: 30)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(
+                        model.microphone.state?.isMuted == true ? Color.red : item.color.swiftUIColor))
             case .smallSpace, .largeSpace, .flexibleSpace:
                 RoundedRectangle(cornerRadius: 4)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [3]))
@@ -101,7 +108,7 @@ struct TouchBarPreview: View {
             selection = item.id
             onActivate?(item)
         }
-        .help(item.kind == .battery ? (model.battery.status?.accessibilityDescription ?? L("No battery")) : item.action.summary)
+        .help(helpText(item))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel(item))
         .accessibilityAddTraits(.isButton)
@@ -116,6 +123,15 @@ struct TouchBarPreview: View {
         case .largeSpace: L("Large Space")
         case .flexibleSpace: L("Flexible Space")
         case .battery: model.battery.status?.accessibilityDescription ?? L("No battery")
+        case .microphone: MicrophoneLabel.description(model.microphone.state)
+        }
+    }
+
+    private func helpText(_ item: TouchBarItemConfig) -> String {
+        switch item.kind {
+        case .battery: model.battery.status?.accessibilityDescription ?? L("No battery")
+        case .microphone: MicrophoneLabel.description(model.microphone.state)
+        default: item.action.summary
         }
     }
 
@@ -192,5 +208,26 @@ struct BatteryLabel: View {
                 if showsPercentage { Text(L("No battery")).font(.system(size: 13)).lineLimit(1) }
             }
         }
+    }
+}
+
+/// Microphone icon plus state, as drawn on the Touch Bar.
+struct MicrophoneLabel: View {
+    var state: MicrophoneState?
+    var showsTitle = true
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: state?.symbolName ?? "mic.slash")
+            if showsTitle {
+                Text(state == nil ? L("No microphone") : (state!.isMuted ? L("Muted") : L("Mic on")))
+                    .font(.system(size: 13)).lineLimit(1)
+            }
+        }
+    }
+
+    static func description(_ state: MicrophoneState?) -> String {
+        guard let state else { return L("No microphone") }
+        return state.isMuted ? L("Microphone muted: %@", state.deviceName) : L("Microphone on: %@", state.deviceName)
     }
 }

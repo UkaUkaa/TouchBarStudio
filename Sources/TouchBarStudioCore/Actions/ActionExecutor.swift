@@ -122,6 +122,8 @@ public final class ActionExecutor {
             }
         case .sequence:
             for step in action.steps ?? [] { collectProblems(step, context: context, depth: depth + 1, into: &problems) }
+        case .microphone:
+            if services.microphoneState() == nil { problems.append(.noInputDevice) }
         case .none, .openURL, .openFile, .copyText:
             break
         }
@@ -157,6 +159,8 @@ public final class ActionExecutor {
             guard catalog.command(id: id) != nil else { throw ActionError.unknownAppCommand(id) }
         case .mediaKey:
             guard action.mediaKey != nil else { throw ActionError.invalidConfiguration(L("No media key selected.")) }
+        case .microphone:
+            guard action.microphoneOperation != nil else { throw ActionError.invalidConfiguration(L("No microphone operation selected.")) }
         case .sequence:
             guard let steps = action.steps, !steps.isEmpty else { throw ActionError.invalidConfiguration(L("Sequence has no steps.")) }
         }
@@ -231,6 +235,17 @@ public final class ActionExecutor {
         case .mediaKey:
             try services.postMediaKey(action.mediaKey!)
             return nil
+
+        case .microphone:
+            guard let state = services.microphoneState() else { throw ActionError.noInputDevice }
+            let mute: Bool
+            switch action.microphoneOperation! {
+            case .toggle: mute = !state.isMuted
+            case .mute: mute = true
+            case .unmute: mute = false
+            }
+            try services.setMicrophoneMuted(mute)
+            return mute ? L("Microphone muted") : L("Microphone on")
 
         case .sequence:
             let steps = action.steps!

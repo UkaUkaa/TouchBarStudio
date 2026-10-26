@@ -9,6 +9,7 @@ final class MockServices: SystemServices {
     var installed: Set<String> = ["com.apple.calculator", "com.apple.finder", "com.apple.Safari"]
     var shellResult = ShellResult(exitCode: 0, stdout: "ok\n", stderr: "", timedOut: false)
     var pasteboard: String?
+    var microphone: MicrophoneState? = MicrophoneState(deviceName: "Mock Mic", isMuted: false)
 
     func openApplication(bundleIdentifier: String) async throws {
         guard installed.contains(bundleIdentifier) else { throw ActionError.applicationNotFound(bundleIdentifier) }
@@ -34,6 +35,12 @@ final class MockServices: SystemServices {
     func isAccessibilityTrusted() -> Bool { trusted }
     func isInstalled(bundleIdentifier: String) -> Bool { installed.contains(bundleIdentifier) }
     func sleep(milliseconds: Int) async { calls.append("sleep:\(milliseconds)") }
+    func microphoneState() -> MicrophoneState? { microphone }
+    func setMicrophoneMuted(_ muted: Bool) throws {
+        guard microphone != nil else { throw ActionError.noInputDevice }
+        microphone?.isMuted = muted
+        calls.append("mic:\(muted)")
+    }
 }
 
 @MainActor
@@ -204,5 +211,54 @@ struct LiveShellTests {
         let result = try await LiveSystemServices().runShell("sleep 5", timeout: 1)
         #expect(result.timedOut)
         #expect(Date().timeIntervalSince(start) < 4)
+    }
+}
+
+@MainActor
+struct MicrophoneActionTests {
+    let services = MockServices()
+    var executor: ActionExecutor { ActionExecutor(services: services, trust: ScriptTrustStore(fileURL: nil)) }
+    let ctx = ExecutionContext(source: "test")
+
+    @Test func toggleFlipsState() async throws {
+        services.microphone = MicrophoneState(deviceName: "Mic", isMuted: false)
+        #expect(try await executor.run(.microphone(.toggle), context: ctx).get() == "Microphone muted")
+        #expect(services.microphone?.isMuted == true)
+        #expect(try await executor.run(.microphone(.toggle), context: ctx).get() == "Microphone on")
+        #expect(services.microphone?.isMuted == false)
+    }
+
+    @Test func explicitMuteAndUnmuteAreIdempotent() async throws {
+        services.microphone = MicrophoneState(deviceName: "Mic", isMuted: true)
+        _ = try await executor.run(.microphone(.mute), context: ctx).get()
+        #expect(services.microphone?.isMuted == true)
+        _ = try await executor.run(.microphone(.unmute), context: ctx).get()
+        _ = try await executor.run(.microphone(.unmute), context: ctx).get()
+        #expect(services.microphone?.isMuted == false)
+    }
+
+    @Test func noInputDeviceIsAnError() async {
+        services.microphone = nil
+        let result = await executor.run(.microphone(.toggle), context: ctx)
+        #expect(throws: ActionError.noInputDevice) { try result.get() }
+        #expect(executor.preflight(.microphone(.toggle), context: ctx).contains(.noInputDevice))
+    }
+
+    @Test func missingOperationIsInvalid() async {
+        let result = await executor.run(ActionConfig(kind: .microphone), context: ctx)
+        #expect(throws: ActionError.self) { try result.get() }
+    }
+
+    @Test func microphoneWidgetRoundTripsInPresets() throws {
+        let preset = Preset(name: "Mic", items: [.microphone()])
+        let imported = try PresetCodec.importPreset(from: PresetCodec.export(preset))
+        #expect(imported.preset.items[0].kind == .microphone)
+        #expect(imported.preset.items[0].action == .microphone(.toggle))
+        #expect(imported.preset.items[0].isTappable)
+    }
+
+    @Test func readsThisMacsMicrophoneWithoutChangingIt() {
+        // Read-only: must never mute the real microphone during tests.
+        if let state = MicrophoneControl.currentState() { #expect(!state.deviceName.isEmpty) }
     }
 }

@@ -7,6 +7,62 @@ import TouchBarStudioCore
 /// no Screen Recording permission. Not compiled into release builds.
 @MainActor
 enum DebugSnapshots {
+    /// With `TBS_DEBUG_TOUCHBAR` set, writes the responder chain and each responder's touch
+    /// bar to that file every 2 s, to diagnose an empty Touch Bar.
+    static func traceTouchBarIfRequested() {
+        guard let path = ProcessInfo.processInfo.environment["TBS_DEBUG_TOUCHBAR"] else { return }
+        Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+            MainActor.assumeIsolated {
+                func describe(_ bar: NSTouchBar?) -> String {
+                    guard let bar else { return "nil" }
+                    return "\(bar.defaultItemIdentifiers.count) ids, visible=\(bar.isVisible), delegate=\(bar.delegate.map { "\(type(of: $0))" } ?? "nil")"
+                }
+                var lines = ["\(Date()) active=\(NSApp.isActive) key=\(NSApp.keyWindow.map { "\(type(of: $0)) '\($0.title)'" } ?? "nil")"]
+                var responder: NSResponder? = NSApp.keyWindow?.firstResponder
+                while let current = responder {
+                    lines.append("  \(type(of: current)): \(describe(current.touchBar))")
+                    responder = current.nextResponder
+                }
+                lines.append("  NSApp.touchBar: \(describe(NSApp.touchBar))")
+                let text = lines.joined(separator: "\n") + "\n"
+                if let handle = FileHandle(forWritingAtPath: path) {
+                    handle.seekToEndOfFile(); handle.write(Data(text.utf8)); handle.closeFile()
+                } else {
+                    try? text.write(toFile: path, atomically: true, encoding: .utf8)
+                }
+            }
+        }
+    }
+
+    /// With `TBS_DEBUG_SWITCH_PROVIDER=<kind>[:seconds]`, switches the Touch Bar provider
+    /// at runtime, to test mode changes without clicking through Settings.
+    static func switchProviderIfRequested(model: AppModel) {
+        guard let spec = ProcessInfo.processInfo.environment["TBS_DEBUG_SWITCH_PROVIDER"] else { return }
+        let parts = spec.split(separator: ":")
+        guard let kind = TouchBarProviderKind(rawValue: String(parts[0])) else { return }
+        let delay = parts.count > 1 ? Double(parts[1]) ?? 6 : 6
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            model.config.settings.providerKind = kind
+        }
+    }
+
+    /// With `TBS_DEBUG_TAP=<itemKind>:<seconds>[,<seconds>…]`, performs the first item of that
+    /// kind in the displayed profile at each time, exactly as a Touch Bar tap would.
+    static func tapIfRequested(model: AppModel) {
+        guard let spec = ProcessInfo.processInfo.environment["TBS_DEBUG_TAP"] else { return }
+        let parts = spec.split(separator: ":")
+        guard parts.count == 2, let kind = ItemKind(rawValue: String(parts[0])) else { return }
+        for delay in parts[1].split(separator: ",").compactMap({ Double($0) }) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                if let item = model.activeProfile.items.first(where: { $0.kind == kind }) {
+                    model.perform(item, source: "Debug tap")
+                }
+            }
+        }
+    }
+
     static func runIfRequested(model: AppModel) {
         guard let dir = ProcessInfo.processInfo.environment["TBS_SNAPSHOT_DIR"] else { return }
         Task { @MainActor in

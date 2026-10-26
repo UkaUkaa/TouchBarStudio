@@ -43,6 +43,9 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 | Editor: drag-and-drop reorder, title edit, ⌘Z | ✅ confirmed by the user |
 | Layout and mode persist after restarting the app (config unchanged, layout shown over Terminal) | ✅ captured |
 | Battery widget shows the charging icon and the real percentage (98%) on the Touch Bar | ✅ captured |
+| Microphone widget toggle (performed in-app exactly as a tap): Core Audio mute read back as 1 by a separate process, widget turns red; second toggle unmutes | ✅ captured + verified |
+| Microphone widget follows a mute set by another process | ✅ captured |
+| Physical finger tap on the microphone widget | Not separately tested (tap delivery itself is verified for buttons) |
 | Keyboard-shortcut and media-key actions with Accessibility granted to the bundled app | ⚠️ Not verified on hardware (permission not granted during testing). Covered by unit tests with mocked services only. |
 | AppleScript and shell actions from a Touch Bar tap | ⚠️ Shell runner verified by unit tests against real `/bin/zsh`; not tapped on hardware |
 
@@ -69,6 +72,12 @@ Command Line Tools. Touch Bar contents were captured from the hardware with
 - **Battery widget**: live battery icon and percentage on the Touch Bar (IOKit power-source
   API, no permission needed). Updates on every power-source change, turns orange at 20% and
   red at 10% on battery power; tapping opens Battery settings (configurable or none).
+- **Microphone widget and action**: mute/unmute the microphone for every app by setting
+  the Core Audio mute property of the default input device (no permission needed; devices
+  without a settable mute fall back to input volume 0 and back). The widget turns red while
+  muted, follows changes made elsewhere and switches with the default input device. The
+  "Microphone" action (toggle / mute / unmute) can also go on any button, a global hotkey or
+  a sequence.
 - **Dashboard, Actions, Application Profiles, Presets, Settings** sections; menu bar extra;
   native menus (Layout, Touch Bar, ⌘1–⌘6 navigation); light and dark mode.
 
@@ -120,7 +129,7 @@ created from them; buttons you've already created keep the titles you gave them.
 ```sh
 scripts/build-app.sh            # release build → build/TouchBar Studio.app
 scripts/build-app.sh debug      # debug build
-scripts/test.sh                 # unit tests (Swift Testing, 61 tests)
+scripts/test.sh                 # unit tests (Swift Testing, 67 tests)
 open "build/TouchBar Studio.app"
 cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 ```
@@ -129,9 +138,8 @@ cp -R "build/TouchBar Studio.app" /Applications/   # optional install
 `.xcodeproj` is included: this machine has only the Command Line Tools, so a generated
 project file couldn't be built or verified. SwiftPM packages open natively in Xcode.
 Note that running from Xcode or `swift run` launches a bare executable rather than the
-`.app` bundle. On the test Mac, a bare executable started from a shell did not get its
-Touch Bar shown (the same build launched as an app did), and Accessibility/Automation
-grants belong to the bundle, so test with `scripts/build-app.sh` and `open`.
+`.app` bundle; Accessibility/Automation grants belong to the bundle, so test those with
+`scripts/build-app.sh` and `open`.
 
 Builds are **ad-hoc signed**. macOS ties Accessibility approval to the code signature,
 so after rebuilding you may have to turn the permission off and on again for
@@ -169,6 +177,10 @@ Toolchain notes (Command Line Tools only):
 
 - Standard mode can't show your layout in other apps. That's a macOS restriction, not
   something this app can work around with public API.
+- If TouchBar Studio quits while in experimental mode and is reopened in standard mode
+  within a few seconds, macOS showed an empty Touch Bar for that whole session on the test
+  Mac (reproduced 2/2; the next launch is fine). Switching modes inside a running app is
+  not affected.
 - Experimental mode depends on an undocumented API and may break in any macOS update.
   If you tap its ✕ close button, the layout returns on the next profile change or via
   **Touch Bar › Show Layout on Touch Bar** (also in the menu bar extra).

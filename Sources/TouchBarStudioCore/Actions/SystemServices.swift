@@ -25,6 +25,9 @@ public protocol SystemServices: AnyObject {
     func runShell(_ command: String, timeout: TimeInterval) async throws -> ShellResult
     func isAccessibilityTrusted() -> Bool
     func isInstalled(bundleIdentifier: String) -> Bool
+    /// nil when there is no input device.
+    func microphoneState() -> MicrophoneState?
+    func setMicrophoneMuted(_ muted: Bool) throws
     func sleep(milliseconds: Int) async
 }
 
@@ -183,6 +186,10 @@ public final class LiveSystemServices: SystemServices {
     }
 
     public func isAccessibilityTrusted() -> Bool { AXIsProcessTrusted() }
+
+    public func microphoneState() -> MicrophoneState? { MicrophoneControl.currentState() }
+
+    public func setMicrophoneMuted(_ muted: Bool) throws { try MicrophoneControl.setMuted(muted) }
 
     public func sleep(milliseconds: Int) async {
         try? await Task.sleep(for: .milliseconds(milliseconds))

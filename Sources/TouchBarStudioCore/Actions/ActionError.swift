@@ -16,6 +16,9 @@ public enum ActionError: Error, LocalizedError, Equatable, Sendable {
     case unknownAppCommand(String)
     case nestingTooDeep
     case eventPostingFailed
+    case noInputDevice
+    case microphoneNotControllable(String)
+    case microphoneControlFailed(Int)
 
     public var errorDescription: String? {
         switch self {
@@ -39,6 +42,9 @@ public enum ActionError: Error, LocalizedError, Equatable, Sendable {
         case .unknownAppCommand(let id): L("Unknown app command “%@”.", id)
         case .nestingTooDeep: L("Sequences can be nested at most %d levels deep.", ActionExecutor.maxNestingDepth)
         case .eventPostingFailed: L("Could not create the keyboard event.")
+        case .noInputDevice: L("No microphone (audio input device) is available.")
+        case .microphoneNotControllable(let name): L("“%@” does not let apps mute it or change its input volume.", name)
+        case .microphoneControlFailed(let status): L("macOS refused to change the microphone (Core Audio error %d).", status)
         }
     }
 }

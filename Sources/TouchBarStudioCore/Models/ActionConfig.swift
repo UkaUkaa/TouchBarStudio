@@ -12,6 +12,7 @@ public enum ActionKind: String, Codable, CaseIterable, Sendable, Identifiable {
     case appCommand
     case mediaKey
     case sequence
+    case microphone
 
     public var id: String { rawValue }
 }
@@ -56,6 +57,20 @@ public enum MediaKey: String, Codable, CaseIterable, Sendable, Identifiable {
     }
 }
 
+public enum MicrophoneOperation: String, Codable, CaseIterable, Sendable, Identifiable {
+    case toggle, mute, unmute
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .toggle: L("Toggle microphone")
+        case .mute: L("Mute microphone")
+        case .unmute: L("Unmute microphone")
+        }
+    }
+}
+
 /// A configured action. Stored flat (kind + optional payload fields) so the JSON
 /// stays readable and switching kinds in the editor does not lose unrelated input.
 public struct ActionConfig: Codable, Hashable, Sendable {
@@ -78,6 +93,8 @@ public struct ActionConfig: Codable, Hashable, Sendable {
     public var appCommandID: String?
     /// mediaKey.
     public var mediaKey: MediaKey?
+    /// microphone.
+    public var microphoneOperation: MicrophoneOperation?
     /// sequence.
     public var steps: [ActionConfig]?
     /// sequence: pause between steps.
@@ -94,6 +111,7 @@ public struct ActionConfig: Codable, Hashable, Sendable {
         script: String? = nil,
         appCommandID: String? = nil,
         mediaKey: MediaKey? = nil,
+        microphoneOperation: MicrophoneOperation? = nil,
         steps: [ActionConfig]? = nil,
         delayMilliseconds: Int? = nil
     ) {
@@ -107,6 +125,7 @@ public struct ActionConfig: Codable, Hashable, Sendable {
         self.script = script
         self.appCommandID = appCommandID
         self.mediaKey = mediaKey
+        self.microphoneOperation = microphoneOperation
         self.steps = steps
         self.delayMilliseconds = delayMilliseconds
     }
@@ -124,6 +143,9 @@ public struct ActionConfig: Codable, Hashable, Sendable {
     public static func shell(_ command: String) -> ActionConfig { .init(kind: .shellCommand, script: command) }
     public static func command(_ id: String) -> ActionConfig { .init(kind: .appCommand, appCommandID: id) }
     public static func media(_ key: MediaKey) -> ActionConfig { .init(kind: .mediaKey, mediaKey: key) }
+    public static func microphone(_ operation: MicrophoneOperation) -> ActionConfig {
+        .init(kind: .microphone, microphoneOperation: operation)
+    }
     public static func sequence(_ steps: [ActionConfig], delayMilliseconds: Int = 150) -> ActionConfig {
         .init(kind: .sequence, steps: steps, delayMilliseconds: delayMilliseconds)
     }
@@ -172,6 +194,7 @@ public struct ActionConfig: Codable, Hashable, Sendable {
         case .shellCommand: return L("Shell: %@", String((script ?? "").prefix(40)))
         case .appCommand: return AppCommandCatalog.standard.command(id: appCommandID ?? "")?.title ?? L("Unknown command")
         case .mediaKey: return mediaKey?.title ?? L("Media key")
+        case .microphone: return microphoneOperation?.title ?? L("Microphone")
         case .sequence: return L("Sequence: %@", Lp("%d actions", steps?.count ?? 0))
         }
     }

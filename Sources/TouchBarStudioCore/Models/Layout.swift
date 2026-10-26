@@ -7,6 +7,8 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case flexibleSpace
     /// Live battery percentage and charging state. Runs its action (if any) when tapped.
     case battery
+    /// Shows whether the system microphone is muted; tapping toggles it by default.
+    case microphone
 }
 
 public struct ButtonIcon: Codable, Hashable, Sendable {
@@ -97,10 +99,15 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         TouchBarItemConfig(kind: .battery, title: L("Battery"), action: .openURL(batterySettingsURL))
     }
 
+    /// Microphone widget; tapping toggles system-wide mute by default.
+    public static func microphone() -> TouchBarItemConfig {
+        TouchBarItemConfig(kind: .microphone, title: L("Microphone"), action: .microphone(.toggle))
+    }
+
     public static let batterySettingsURL = "x-apple.systempreferences:com.apple.Battery-Settings.extension"
 
     /// Items that are tapped like buttons (have an action, title, color).
-    public var isTappable: Bool { kind == .button || kind == .battery }
+    public var isTappable: Bool { kind == .button || kind == .battery || kind == .microphone }
 
     public static func space(_ kind: ItemKind) -> TouchBarItemConfig {
         TouchBarItemConfig(kind: kind)

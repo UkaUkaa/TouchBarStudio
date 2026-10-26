@@ -99,7 +99,7 @@ public enum PresetCodec {
         for (index, item) in preset.items.enumerated() {
             let label = L("Item %d", index + 1) + (item.title.isEmpty ? "" : " (“\(item.title.prefix(20))”)")
             if item.title.count > maxTitleLength { error(L("%@: title is too long.", label)) }
-            if item.kind == .battery, item.action.kind != .none {
+            if item.kind == .battery || item.kind == .microphone, item.action.kind != .none {
                 validateAction(item.action, label: label, depth: 0, catalog: catalog, error: error, warning: warning)
             }
             if item.kind == .button {
@@ -147,6 +147,8 @@ public enum PresetCodec {
             if catalog.command(id: action.appCommandID ?? "") == nil { error(L("%@: unknown app command “%@”.", label, action.appCommandID ?? "")) }
         case .mediaKey:
             if action.mediaKey == nil { error(L("%@: media key is missing.", label)) }
+        case .microphone:
+            if action.microphoneOperation == nil { error(L("%@: microphone operation is missing.", label)) }
         case .sequence:
             let steps = action.steps ?? []
             if steps.isEmpty { error(L("%@: sequence is empty.", label)) }

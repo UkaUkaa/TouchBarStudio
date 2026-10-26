@@ -171,6 +171,9 @@ struct ItemListView: View {
                         } else if item.kind == .battery {
                             Text(model.battery.status?.percentageText ?? L("No battery"))
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else if item.kind == .microphone {
+                            Text(MicrophoneLabel.description(model.microphone.state))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
                     Spacer()
@@ -222,12 +225,15 @@ struct ItemListView: View {
         case .largeSpace: L("Large Space")
         case .flexibleSpace: L("Flexible Space")
         case .battery: L("Battery")
+        case .microphone: L("Microphone")
         }
     }
 
     @ViewBuilder private func itemIcon(_ item: TouchBarItemConfig) -> some View {
         if item.kind == .battery {
             Image(systemName: model.battery.status?.symbolName ?? "powerplug")
+        } else if item.kind == .microphone {
+            Image(systemName: model.microphone.state?.symbolName ?? "mic.slash")
         } else if item.kind != .button {
             Image(systemName: "arrow.left.and.right").foregroundStyle(.secondary)
         } else if let image = IconProvider.image(for: item.icon, pointSize: 13) {
@@ -258,6 +264,8 @@ struct ItemPropertiesView: View {
                     buttonSections(item)
                 } else if item.kind == .battery {
                     batterySections(item)
+                } else if item.kind == .microphone {
+                    microphoneSections(item)
                 } else {
                     Section(L("Space")) {
                         Picker(L("Size"), selection: binding("kind", \.kind, default: .smallSpace)) {
@@ -277,6 +285,45 @@ struct ItemPropertiesView: View {
                 }
             }
             .formStyle(.grouped)
+        }
+    }
+
+    @ViewBuilder
+    private func microphoneSections(_ item: TouchBarItemConfig) -> some View {
+        Section(L("Microphone")) {
+            LabeledContent(L("Now")) {
+                HStack {
+                    MicrophoneLabel(state: model.microphone.state)
+                    Text(model.microphone.state?.deviceName ?? "").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Toggle(L("Show state text"), isOn: binding("showsTitle", \.showsTitle, default: true))
+            LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            Text(L("Mutes the current input device for every app. The widget turns red while the microphone is muted and follows changes made elsewhere (System Settings, other apps, a headset being plugged in)."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        Section {
+            ActionEditor(action: binding("action", \.action, default: .none),
+                         associatedBundleIdentifier: nil, depth: 0)
+        } header: {
+            Text(L("On tap"))
+        }
+        hotKeySection(item)
+    }
+
+    @ViewBuilder
+    private func hotKeySection(_ item: TouchBarItemConfig) -> some View {
+        Section(L("Global hotkey")) {
+            KeyRecorder(combo: binding("hotKey", \.hotKey, default: nil), requireModifier: true)
+            if let failure = model.hotKeyFailures[itemID] {
+                Text(failure).font(.caption).foregroundStyle(.red)
+            } else if item.hotKey != nil && !model.config.settings.enableGlobalHotKeys {
+                Text(L("Global hotkeys are turned off in Settings.")).font(.caption).foregroundStyle(.orange)
+            } else {
+                Text(L("Optional. Press it anywhere to run this button's action, even when the button isn't on screen."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 

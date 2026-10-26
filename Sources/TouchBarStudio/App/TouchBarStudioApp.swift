@@ -10,6 +10,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.start()
         #if DEBUG
         DebugSnapshots.runIfRequested(model: model)
+        DebugSnapshots.traceTouchBarIfRequested()
+        DebugSnapshots.switchProviderIfRequested(model: model)
+        DebugSnapshots.tapIfRequested(model: model)
         #endif
     }
 
