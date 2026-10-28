@@ -30,7 +30,7 @@ public enum LayoutMetrics {
         case .flexibleSpace: return 24
         // Battery icon plus "100%".
         case .battery: return item.showsTitle ? 92 + 27 * (iconScale - 1) : compactWidgetWidth(iconWidth: 27 * iconScale)
-        // Mic icon plus "Muted" / "Mic on" (longest label in Russian: "Выключен").
+        // Mic icon plus "Muted" / "Mic on" (longest labels: Russian "Выключен", Ukrainian "Увімкнено").
         case .microphone: return item.showsTitle ? 112 + 14 * (iconScale - 1) : compactWidgetWidth(iconWidth: 14 * iconScale)
         // Text only, e.g. "14:05" (71 pt on hardware) or "Пн, 26 окт., 03:21" (124 pt).
         case .clock:

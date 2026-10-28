@@ -5,17 +5,33 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
     case system
     case english
     case russian
+    case ukrainian
 
     /// Concrete language after resolving `.system` against the user's preferred languages.
     public var resolved: AppLanguage {
         guard self == .system else { return self }
         let preferred = Locale.preferredLanguages.first ?? "en"
-        return preferred.hasPrefix("ru") ? .russian : .english
+        if preferred.hasPrefix("ru") { return .russian }
+        if preferred.hasPrefix("uk") { return .ukrainian }
+        return .english
+    }
+
+    /// ISO 639 code of the resolved language.
+    public var languageCode: String {
+        switch resolved {
+        case .russian: "ru"
+        case .ukrainian: "uk"
+        case .english, .system: "en"
+        }
     }
 
     /// Locale for dates and numbers.
     public var locale: Locale {
-        Locale(identifier: resolved == .russian ? "ru_RU" : "en_US")
+        switch resolved {
+        case .russian: Locale(identifier: "ru_RU")
+        case .ukrainian: Locale(identifier: "uk_UA")
+        case .english, .system: Locale(identifier: "en_US")
+        }
     }
 
     /// Language code for `AppleLanguages` (system-provided menus and panels).
@@ -24,6 +40,7 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
         case .system: nil
         case .english: "en"
         case .russian: "ru"
+        case .ukrainian: "uk"
         }
     }
 
@@ -33,6 +50,7 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
         case .system: L("System")
         case .english: "English"
         case .russian: "Русский"
+        case .ukrainian: "Українська"
         }
     }
 }
@@ -60,15 +78,17 @@ public enum L10n {
     public static func translate(_ key: String, language: AppLanguage) -> String {
         switch language.resolved {
         case .russian: RussianStrings.table[key] ?? key
+        case .ukrainian: UkrainianStrings.table[key] ?? key
         case .english, .system: key
         }
     }
 
-    /// Plural forms. English: one/other. Russian: one/few/many.
+    /// Plural forms. English: one/other. Russian and Ukrainian: one/few/many (same rules).
     public static func plural(_ key: String, _ count: Int, language: AppLanguage) -> String {
         switch language.resolved {
-        case .russian:
-            guard let forms = RussianStrings.plurals[key] else { return String(format: key, count) }
+        case .russian, .ukrainian:
+            let table = language.resolved == .russian ? RussianStrings.plurals : UkrainianStrings.plurals
+            guard let forms = table[key] else { return String(format: key, count) }
             let n10 = abs(count) % 10, n100 = abs(count) % 100
             let form: String
             if n10 == 1 && n100 != 11 { form = forms.one }

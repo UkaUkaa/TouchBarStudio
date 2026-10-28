@@ -4,6 +4,8 @@
 
 # TouchBar Studio
 
+**English** · [Русский](README.ru.md) · [Українська](README.uk.md)
+
 **Make the Touch Bar on your MacBook Pro actually useful.**
 
 Build your own buttons, put live widgets on the bar, switch layouts per app,
@@ -12,7 +14,7 @@ and share them as presets — in a native macOS app with no dependencies.
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](#requirements)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![Universal](https://img.shields.io/badge/Apple%20silicon%20%2B%20Intel-universal-4B5563)](#install)
-[![Languages](https://img.shields.io/badge/UI-English%20%7C%20Русский-2563EB)](#interface-language)
+[![Languages](https://img.shields.io/badge/UI-EN%20%7C%20RU%20%7C%20UK-2563EB)](#interface-language)
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-16A34A)](LICENSE)
 
 [**Download**](https://github.com/UkaUkaa/TouchBarStudio/releases/latest) ·
@@ -177,7 +179,7 @@ After that the app opens normally.
 | See my layout **in every app** | **Settings › Touch Bar Integration** → **Over all apps (experimental)** ([what this means](#how-it-reaches-the-touch-bar)) |
 | Start the app at login | **Settings › General › Launch at login** |
 | Use keyboard-shortcut and media-key buttons | **Settings › Permissions** → **Grant Access…**, then turn on TouchBar Studio in System Settings. Everything else works without it |
-| Switch to Russian | **Settings › Language** |
+| Switch to Russian or Ukrainian | **Settings › Language** |
 
 ### Update
 
@@ -303,8 +305,8 @@ extra; native menus (Layout, Touch Bar, ⌘1–⌘6 navigation); light and dark 
 
 ## Interface language
 
-🇬🇧 English and 🇷🇺 Russian, switchable in **Settings › Language** (System / English /
-Русский) without restarting. "System" follows the first preferred language in macOS.
+English, Russian and Ukrainian, switchable in **Settings › Language** (System / English /
+Русский / Українська) without restarting. "System" follows the first preferred language in macOS.
 Standard menus and panels supplied by macOS (Edit, Window, open/save dialogs) follow
 `AppleLanguages` and switch after a restart; Settings offers a **Restart Now** button.
 
@@ -312,11 +314,11 @@ Standard menus and panels supplied by macOS (Edit, Window, open/save dialogs) fo
 <summary>How translations work</summary>
 
 Translations are Swift dictionaries in `Sources/TouchBarStudioCore/Localization/`, keyed
-by the English text and accessed with `L("…")` / `Lp("%d items", n)` (Russian plural
-rules). There are no resource bundles, so the app behaves the same as a `.app`, under
+by the English text and accessed with `L("…")` / `Lp("%d items", n)` (Russian and
+Ukrainian plural rules). There are no resource bundles, so the app behaves the same as a `.app`, under
 `swift run` and in Xcode. `LocalizationTests` scans the sources and fails on a missing,
 unused or placeholder-mismatched translation, and checks that the built-in presets fit
-in Russian too. Built-in preset names and button titles are localized when a profile is
+in Russian and Ukrainian too. Built-in preset names and button titles are localized when a profile is
 created from them; buttons you've already created keep the titles you gave them.
 
 </details>

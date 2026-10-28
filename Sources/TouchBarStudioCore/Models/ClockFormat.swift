@@ -48,7 +48,7 @@ public enum ClockFormat: String, Codable, CaseIterable, Sendable, Identifiable {
         var components = Locale.Components(locale: base)
         // Keep the region: it decides the order of date parts and the default hour cycle.
         components.languageComponents = Locale.Language.Components(
-            languageCode: .init(language.resolved == .russian ? "ru" : "en"), script: nil, region: base.region)
+            languageCode: .init(language.languageCode), script: nil, region: base.region)
         return Locale(components: components)
     }
 }

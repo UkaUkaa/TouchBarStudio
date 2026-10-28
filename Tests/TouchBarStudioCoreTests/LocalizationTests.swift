@@ -48,9 +48,18 @@ struct LocalizationTests {
         #expect(missingPlurals.isEmpty, "Missing Russian plurals: \(missingPlurals)")
     }
 
+    @Test func everyUsedKeyHasAUkrainianTranslation() {
+        let missing = Self.usage.keys.subtracting(UkrainianStrings.table.keys).sorted()
+        #expect(missing.isEmpty, "Missing Ukrainian translations: \(missing)")
+        let missingPlurals = Self.usage.pluralKeys.subtracting(UkrainianStrings.plurals.keys).sorted()
+        #expect(missingPlurals.isEmpty, "Missing Ukrainian plurals: \(missingPlurals)")
+    }
+
     @Test func noUnusedTranslations() {
         let unused = Set(RussianStrings.table.keys).subtracting(Self.usage.keys).sorted()
         #expect(unused.isEmpty, "Translations no longer used: \(unused)")
+        let unusedUkrainian = Set(UkrainianStrings.table.keys).subtracting(Self.usage.keys).sorted()
+        #expect(unusedUkrainian.isEmpty, "Ukrainian translations no longer used: \(unusedUkrainian)")
     }
 
     @Test func keysAreNotInterpolated() {
@@ -59,12 +68,16 @@ struct LocalizationTests {
     }
 
     @Test func placeholdersMatch() {
-        for (key, value) in RussianStrings.table {
-            #expect(Self.placeholders(key) == Self.placeholders(value), "Placeholder mismatch for “\(key)”")
+        for table in [RussianStrings.table, UkrainianStrings.table] {
+            for (key, value) in table {
+                #expect(Self.placeholders(key) == Self.placeholders(value), "Placeholder mismatch for “\(key)”: \(value)")
+            }
         }
-        for (key, forms) in RussianStrings.plurals {
-            for form in [forms.one, forms.few, forms.many] {
-                #expect(Self.placeholders(key) == Self.placeholders(form), "Plural placeholder mismatch for “\(key)”")
+        for plurals in [RussianStrings.plurals, UkrainianStrings.plurals] {
+            for (key, forms) in plurals {
+                for form in [forms.one, forms.few, forms.many] {
+                    #expect(Self.placeholders(key) == Self.placeholders(form), "Plural placeholder mismatch for “\(key)”")
+                }
             }
         }
     }
@@ -85,6 +98,10 @@ struct LocalizationTests {
                          (11, "11 элементов"), (12, "12 элементов"), (21, "21 элемент"), (22, "22 элемента"), (0, "0 элементов")]
             for (n, expected) in cases { #expect(Lp("%d items", n) == expected) }
         }
+        L10n.$override.withValue(.ukrainian) {
+            let cases = [(1, "1 елемент"), (3, "3 елементи"), (5, "5 елементів"), (11, "11 елементів"), (21, "21 елемент")]
+            for (n, expected) in cases { #expect(Lp("%d items", n) == expected) }
+        }
         #expect(Lp("%d items", 1) == "1 item")
         #expect(Lp("%d items", 3) == "3 items")
     }
@@ -92,6 +109,8 @@ struct LocalizationTests {
     @Test func systemLanguageResolvesToConcreteLanguage() {
         #expect(AppLanguage.system.resolved != .system)
         #expect(AppLanguage.russian.resolved == .russian)
+        #expect(AppLanguage.ukrainian.resolved == .ukrainian)
+        #expect(AppLanguage.ukrainian.appleLanguageCode == "uk")
     }
 
     @Test func russianPresetsAreTranslatedAndFit() {
@@ -103,6 +122,17 @@ struct LocalizationTests {
             }
             #expect(BuiltInPresets.productivity.name == "Продуктивность")
             #expect(AppConfiguration.makeDefault().defaultProfile.name == "По умолчанию")
+        }
+    }
+
+    @Test func ukrainianPresetsAreTranslatedAndFit() {
+        L10n.$override.withValue(.ukrainian) {
+            let available = LayoutMetrics.availableWidth(showsControlStrip: true, showsCloseButton: true)
+            for preset in BuiltInPresets.all {
+                #expect(LayoutMetrics.estimatedWidth(of: preset.items) <= available,
+                        "\(preset.name) is too wide in Ukrainian: \(LayoutMetrics.estimatedWidth(of: preset.items))")
+            }
+            #expect(L("Dashboard") != "Dashboard")
         }
     }
 
