@@ -85,6 +85,37 @@ struct SettingsView: View {
                 Toggle(L("Enable global hotkeys for buttons"), isOn: setting(\.enableGlobalHotKeys))
             }
 
+            Section(L("Apps with Their Own Touch Bar")) {
+                if model.config.settings.ownTouchBarApps.isEmpty {
+                    Text(L("No apps yet.")).foregroundStyle(.secondary)
+                }
+                ForEach(model.config.settings.ownTouchBarApps, id: \.self) { id in
+                    HStack {
+                        AppIconView(bundleIdentifier: id)
+                        VStack(alignment: .leading) {
+                            Text(IconProvider.appName(bundleIdentifier: id) ?? id)
+                            Text(id).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button(role: .destructive) {
+                            model.setUsesOwnTouchBar(id, false)
+                        } label: { Image(systemName: "minus.circle") }
+                        .buttonStyle(.borderless)
+                        .help(L("Remove from the list"))
+                    }
+                }
+                AppPickerButton(title: L("Add Application…")) { model.setUsesOwnTouchBar($0, true) }
+                Text(L("While one of these apps is in front, the Touch Bar shows that app’s own controls instead of your layout. Your layout comes back as soon as you switch to another app."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !model.providerShowsOverOtherApps {
+                    StatusBadge(text: L("Works in the “over all apps” mode"), style: .warning)
+                    Text(L("In the standard mode every app already shows its own Touch Bar, because your layout is only shown inside TouchBar Studio."))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Section(L("Permissions")) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {

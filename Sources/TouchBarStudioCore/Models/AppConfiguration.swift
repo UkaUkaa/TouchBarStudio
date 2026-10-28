@@ -28,6 +28,9 @@ public struct AppSettings: Codable, Hashable, Sendable {
     /// Fixed width of every button and widget in points; nil fits each to its content.
     /// Items can override it.
     public var buttonWidth: Double?
+    /// Bundle identifiers of apps that always keep their own Touch Bar: the layout is not
+    /// shown while one of them is in front (experimental mode only).
+    public var ownTouchBarApps: [String]
 
     public init(
         providerKind: TouchBarProviderKind = .application,
@@ -40,7 +43,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         enableGlobalHotKeys: Bool = true,
         language: AppLanguage = .system,
         iconSize: Double = IconSize.standard,
-        buttonWidth: Double? = nil
+        buttonWidth: Double? = nil,
+        ownTouchBarApps: [String] = []
     ) {
         self.providerKind = providerKind
         self.autoSwitchProfiles = autoSwitchProfiles
@@ -53,11 +57,13 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.language = language
         self.iconSize = iconSize
         self.buttonWidth = buttonWidth
+        self.ownTouchBarApps = ownTouchBarApps
     }
 
     enum CodingKeys: String, CodingKey {
         case providerKind, autoSwitchProfiles, manualProfileID, allowShellCommands, allowAppleScript
         case shellTimeoutSeconds, keepControlStrip, enableGlobalHotKeys, language, iconSize, buttonWidth
+        case ownTouchBarApps
     }
 
     public init(from decoder: Decoder) throws {
@@ -74,6 +80,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         language = (try? c.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? d.language
         iconSize = IconSize.clamp((try? c.decodeIfPresent(Double.self, forKey: .iconSize)) ?? d.iconSize)
         buttonWidth = (try? c.decodeIfPresent(Double.self, forKey: .buttonWidth)).flatMap { $0 }.map(ButtonWidth.clamp)
+        ownTouchBarApps = (try? c.decodeIfPresent([String].self, forKey: .ownTouchBarApps)) ?? d.ownTouchBarApps
     }
 }
 

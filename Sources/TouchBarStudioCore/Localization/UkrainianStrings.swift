@@ -584,6 +584,17 @@ enum UkrainianStrings {
         "✕ hides your layout in the app that is in front, until you switch to another app. Next time you return to it, the layout is back.":
             "✕ приховує розкладку в програмі на передньому плані, доки ви не перейдете в іншу. Коли повернетеся, розкладка знову буде на місці.",
 
+        // MARK: Apps with their own Touch Bar
+        "Apps with Their Own Touch Bar": "Програми з власною Touch Bar",
+        "No apps yet.": "Поки немає програм.",
+        "Remove from the list": "Прибрати зі списку",
+        "While one of these apps is in front, the Touch Bar shows that app’s own controls instead of your layout. Your layout comes back as soon as you switch to another app.":
+            "Доки одна з цих програм попереду, на Touch Bar показуються її власні кнопки, а не ваша розкладка. Розкладка повернеться, щойно ви перейдете в іншу програму.",
+        "Works in the “over all apps” mode": "Працює в режимі «Поверх усіх програм»",
+        "In the standard mode every app already shows its own Touch Bar, because your layout is only shown inside TouchBar Studio.":
+            "У стандартному режимі кожна програма й так показує свою Touch Bar: вашу розкладку видно лише всередині TouchBar Studio.",
+        "Always Use %@’s Own Touch Bar": "Завжди власна Touch Bar у «%@»",
+
         // MARK: Errors
         "This button has no action assigned.": "Цій кнопці не призначено дію.",
         "Invalid action: %@": "Неправильна дія: %@",

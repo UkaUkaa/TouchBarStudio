@@ -158,6 +158,7 @@ final class AppModel {
             frontmostBundleIdentifier: apps.lastExternalApp?.bundleIdentifier,
             frontmostIsSelf: apps.frontmostIsSelf,
             closedInApp: closedInApp,
+            ownTouchBarApps: config.settings.ownTouchBarApps,
             providerShowsOverOtherApps: providerShowsOverOtherApps))
         touchBar.defaultIconSize = config.settings.iconSize
         touchBar.defaultWidth = config.settings.buttonWidth
@@ -183,6 +184,17 @@ final class AppModel {
         guard providerShowsOverOtherApps, !apps.frontmostIsSelf, let app = apps.lastExternalApp,
               app.bundleIdentifier == closedInApp else { return nil }
         return app
+    }
+
+    // MARK: Apps that keep their own Touch Bar
+
+    func usesOwnTouchBar(_ bundleIdentifier: String) -> Bool {
+        config.settings.ownTouchBarApps.contains(bundleIdentifier)
+    }
+
+    func setUsesOwnTouchBar(_ bundleIdentifier: String, _ enabled: Bool) {
+        config.settings.ownTouchBarApps.removeAll { $0 == bundleIdentifier }
+        if enabled { config.settings.ownTouchBarApps.append(bundleIdentifier) }
     }
 
     /// Brings the layout back in the current app without leaving it.

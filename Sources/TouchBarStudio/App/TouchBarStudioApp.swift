@@ -161,6 +161,11 @@ struct MenuBarContent: View {
         if let app = model.frontmostHiddenApp {
             Button(L("Show Layout in %@", app.name)) { model.showLayoutInCurrentApp() }
         }
+        if model.providerShowsOverOtherApps, let app = model.apps.lastExternalApp {
+            Toggle(L("Always Use %@’s Own Touch Bar", app.name), isOn: Binding(
+                get: { model.usesOwnTouchBar(app.bundleIdentifier) },
+                set: { model.setUsesOwnTouchBar(app.bundleIdentifier, $0) }))
+        }
         Button(model.touchBarHidden ? L("Show Layout on Touch Bar") : L("Hide Layout from Touch Bar")) {
             model.touchBarHidden ? model.showTouchBar() : model.hideTouchBar()
         }

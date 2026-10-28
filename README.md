@@ -177,6 +177,7 @@ After that the app opens normally.
 |---|---|
 | See my layout right away | It's already there while TouchBar Studio is the active app |
 | See my layout **in every app** | **Settings › Touch Bar Integration** → **Over all apps (experimental)** ([what this means](#how-it-reaches-the-touch-bar)) |
+| Keep an app's own Touch Bar (e.g. Xcode or Final Cut Pro) | **Settings › Apps with Their Own Touch Bar** → **Add Application…**, or, while that app is in front, **Always Use <App>'s Own Touch Bar** in the menu bar |
 | Start the app at login | **Settings › General › Launch at login** |
 | Use keyboard-shortcut and media-key buttons | **Settings › Permissions** → **Grant Access…**, then turn on TouchBar Studio in System Settings. Everything else works without it |
 | Switch to Russian or Ukrainian | **Settings › Language** |
@@ -297,6 +298,10 @@ the display sleeps, the screen is locked or the login window is in front are ign
   `NSWorkspace.didActivateApplicationNotification`.
 - **Presets**: Developer, Browser, Writer, Productivity, Creative Work and Finder.
   Custom presets can be imported and exported as versioned JSON.
+- **Apps with their own Touch Bar**: a list of apps in which your layout is never shown,
+  so their native Touch Bar controls stay. Your layout is back as soon as another app is
+  in front. Manage it in Settings, or toggle the app in front from the menu bar. Works in
+  the "over all apps" mode; in the standard mode every app keeps its own Touch Bar anyway.
 
 ### Everywhere else
 
