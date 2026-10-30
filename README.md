@@ -268,8 +268,8 @@ the display sleeps, the screen is locked or the login window is in front are ign
   and following the macOS 12/24-hour setting — or a custom format: day/month or month/day
   or year first, year as YY/YYYY or none, date and time separators, seconds, 24/12 hours,
   weekday, time before or after the date (e.g. `26.10.26 14:05:09`, `10/26 2:05 PM`,
-  `2026-10-26 14:05`), or your own Unicode date pattern. Tapping opens Calendar
-  (configurable or none).
+  `2026-10-26 14:05`), or your own Unicode date pattern. Text size is adjustable
+  (10–24 pt). Tapping opens Calendar (configurable or none).
 - **Volume and brightness sliders**: the volume of the default output device (Core Audio
   virtual main volume, no permission needed) and the brightness of the built-in display
   (the private DisplayServices framework, looked up at runtime). Both follow changes made

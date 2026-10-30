@@ -34,7 +34,8 @@ public enum LayoutMetrics {
         case .microphone: return item.showsTitle ? 112 + 14 * (iconScale - 1) : compactWidgetWidth(iconWidth: 14 * iconScale)
         // Text only, e.g. "14:05" (71 pt on hardware) or "Пн, 26 окт., 03:21" (124 pt).
         case .clock:
-            return max(72, Double(item.clockText(at: widestSampleDate).count) * 6.3 + 14)
+            let textScale = (item.resolvedTextSize ?? TextSize.standard) / TextSize.standard
+            return max(72, Double(item.clockText(at: widestSampleDate).count) * 6.3 * textScale + 14)
         // Slider plus the two accessory icons.
         case .volume, .brightness: return sliderWidth + 2 * sliderAccessoryWidth * max(1, iconScale)
         case .button:

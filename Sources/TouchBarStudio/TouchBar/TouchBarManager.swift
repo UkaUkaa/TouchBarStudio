@@ -222,7 +222,8 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
             let button = NSButton(title: "", target: self, action: #selector(buttonTapped(_:)))
             button.identifier = NSUserInterfaceItemIdentifier(config.id.uuidString)
             // Fixed-width digits, so the button doesn't change width every second.
-            button.font = .monospacedDigitSystemFont(ofSize: button.font?.pointSize ?? NSFont.systemFontSize, weight: .regular)
+            let size = config.resolvedTextSize.map { CGFloat($0) } ?? button.font?.pointSize ?? NSFont.systemFontSize
+            button.font = .monospacedDigitSystemFont(ofSize: size, weight: .regular)
             applyClock(to: button, config: config)
             applyFixedWidth(to: button, config: config)
             buttons[id] = button

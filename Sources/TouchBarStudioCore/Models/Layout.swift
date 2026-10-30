@@ -63,6 +63,8 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
     public var clockFormat: ClockFormat?
     /// Clock widget with `clockFormat == .custom`.
     public var clockCustom: ClockCustomFormat?
+    /// Clock widget: text size in points; nil uses the standard Touch Bar font.
+    public var textSize: Double?
     /// Icon size in points; nil uses the default from Settings.
     public var iconSize: Double?
     /// Width in points: nil uses the default from Settings, `ButtonWidth.fitContent` (0)
@@ -81,6 +83,7 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         associatedBundleIdentifier: String? = nil,
         clockFormat: ClockFormat? = nil,
         clockCustom: ClockCustomFormat? = nil,
+        textSize: Double? = nil,
         iconSize: Double? = nil,
         width: Double? = nil
     ) {
@@ -95,6 +98,7 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         self.associatedBundleIdentifier = associatedBundleIdentifier
         self.clockFormat = clockFormat
         self.clockCustom = clockCustom
+        self.textSize = textSize
         self.iconSize = iconSize
         self.width = width
     }
@@ -158,6 +162,11 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         IconSize.clamp(iconSize ?? defaultSize)
     }
 
+    /// Clock text size in points, or nil for the standard font.
+    public var resolvedTextSize: Double? {
+        textSize.map(TextSize.clamp)
+    }
+
     /// Fixed width in points, or nil when the item fits its content. `defaultWidth` is the
     /// Settings value (nil: fit content); it applies to buttons and widgets, not to spaces
     /// or sliders.
@@ -190,7 +199,7 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, title, showsTitle, icon, color, action, hotKey, associatedBundleIdentifier, clockFormat, clockCustom, iconSize, width
+        case id, kind, title, showsTitle, icon, color, action, hotKey, associatedBundleIdentifier, clockFormat, clockCustom, textSize, iconSize, width
     }
 
     // Lenient decoding: missing optional fields fall back to defaults so older or
@@ -208,6 +217,7 @@ public struct TouchBarItemConfig: Codable, Hashable, Identifiable, Sendable {
         associatedBundleIdentifier = try c.decodeIfPresent(String.self, forKey: .associatedBundleIdentifier)
         clockFormat = try c.decodeIfPresent(ClockFormat.self, forKey: .clockFormat)
         clockCustom = try c.decodeIfPresent(ClockCustomFormat.self, forKey: .clockCustom)
+        textSize = try c.decodeIfPresent(Double.self, forKey: .textSize)
         iconSize = try c.decodeIfPresent(Double.self, forKey: .iconSize)
         width = try c.decodeIfPresent(Double.self, forKey: .width)
     }
@@ -244,6 +254,15 @@ public enum IconSize {
     public static let standard: Double = 16
     /// Above 22 pt tall symbols (e.g. the microphone) are clipped by the 30 pt bar.
     public static let range: ClosedRange<Double> = 10...22
+
+    public static func clamp(_ size: Double) -> Double { min(range.upperBound, max(range.lowerBound, size)) }
+}
+
+/// Limits for the clock widget's text size (the Touch Bar is 30 pt tall).
+public enum TextSize {
+    /// Roughly the system font of Touch Bar buttons; the starting value of the slider.
+    public static let standard: Double = 15
+    public static let range: ClosedRange<Double> = 10...24
 
     public static func clamp(_ size: Double) -> Double { min(range.upperBound, max(range.lowerBound, size)) }
 }

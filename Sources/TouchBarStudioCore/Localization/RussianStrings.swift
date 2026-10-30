@@ -551,6 +551,8 @@ enum RussianStrings {
         "Icon size": "Размер иконок",
         "%d pt": "%d пт",
         "Own icon size": "Свой размер иконки",
+        "Own text size": "Свой размер текста",
+        "Text size": "Размер текста",
         "Uses the default size from Settings (%d pt).": "Используется размер по умолчанию из Настроек (%d пт).",
         "Default size of icons on the Touch Bar. Each button or widget can have its own size in the editor.":
             "Размер иконок на Touch Bar по умолчанию. В редакторе у каждой кнопки и виджета можно задать свой.",

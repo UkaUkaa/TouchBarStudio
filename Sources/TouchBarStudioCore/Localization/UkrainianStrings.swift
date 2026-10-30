@@ -551,6 +551,8 @@ enum UkrainianStrings {
         "Icon size": "Розмір іконок",
         "%d pt": "%d пт",
         "Own icon size": "Свій розмір іконки",
+        "Own text size": "Свій розмір тексту",
+        "Text size": "Розмір тексту",
         "Uses the default size from Settings (%d pt).": "Використовується розмір за замовчуванням із Параметрів (%d пт).",
         "Default size of icons on the Touch Bar. Each button or widget can have its own size in the editor.":
             "Розмір іконок на Touch Bar за замовчуванням. У редакторі для кожної кнопки й віджета можна задати свій.",

@@ -413,6 +413,14 @@ struct ItemPropertiesView: View {
                 clockCustomRows(item)
             }
             LabeledContent(L("Color")) { ColorSwatchPicker(color: binding("color", \.color, default: .standard)) }
+            Toggle(L("Own text size"), isOn: Binding(
+                get: { item.textSize != nil },
+                set: { on in model.editor.update(itemID, field: "textSize") { $0.textSize = on ? TextSize.standard : nil } }))
+            if let size = item.textSize {
+                TextSizeSlider(size: Binding(
+                    get: { size },
+                    set: { value in model.editor.update(itemID, field: "textSize") { $0.textSize = value } }))
+            }
             widthRows(item)
             Text(L("Named formats follow the region and 12/24-hour settings of macOS."))
                 .font(.caption).foregroundStyle(.secondary)

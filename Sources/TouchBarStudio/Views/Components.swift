@@ -299,6 +299,29 @@ struct IconSizeSlider: View {
     }
 }
 
+/// Clock text size in points, with a reset to the standard size.
+struct TextSizeSlider: View {
+    @Binding var size: Double
+
+    var body: some View {
+        LabeledContent(L("Text size")) {
+            HStack {
+                Slider(value: $size, in: TextSize.range, step: 1) {
+                    EmptyView()
+                } minimumValueLabel: {
+                    Image(systemName: "textformat.size.smaller").font(.system(size: 10))
+                } maximumValueLabel: {
+                    Image(systemName: "textformat.size.larger").font(.system(size: 14))
+                }
+                .frame(minWidth: 140)
+                Text(L("%d pt", Int(size))).monospacedDigit().frame(width: 44, alignment: .trailing)
+                Button(L("Reset")) { size = TextSize.standard }
+                    .disabled(size == TextSize.standard)
+            }
+        }
+    }
+}
+
 /// Width in points for buttons or sliders.
 struct WidthSlider: View {
     @Binding var width: Double

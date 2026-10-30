@@ -110,6 +110,18 @@ struct SystemWidgetTests {
         #expect(LayoutMetrics.estimatedWidth(of: mic, defaultIconSize: 24) > LayoutMetrics.estimatedWidth(of: mic))
     }
 
+    @Test func clockTextSizeIsOptionalClampedAndSaved() throws {
+        var clock = TouchBarItemConfig.clock(.dateAndTime)
+        #expect(clock.resolvedTextSize == nil)
+        let standardWidth = LayoutMetrics.estimatedWidth(of: clock)
+        clock.textSize = 40
+        #expect(clock.resolvedTextSize == TextSize.range.upperBound)
+        // Bigger text makes the clock wider in the estimate.
+        #expect(LayoutMetrics.estimatedWidth(of: clock) > standardWidth)
+        let decoded = try JSONDecoder().decode(TouchBarItemConfig.self, from: JSONEncoder().encode(clock))
+        #expect(decoded.textSize == 40)
+    }
+
     @Test func buttonWidthComesFromSettingsUnlessTheItemOverridesIt() throws {
         var button = TouchBarItemConfig.button("A", symbol: "star", action: .none)
         #expect(button.resolvedWidth(default: nil) == nil)

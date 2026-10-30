@@ -280,7 +280,9 @@ struct ClockLabel: View {
     var item: TouchBarItemConfig
 
     var body: some View {
-        Text(item.clockText(at: model.clock.now)).font(.system(size: 13).monospacedDigit()).lineLimit(1)
+        // Drawn at 14/16 of the real size, like the icons.
+        let size = (item.resolvedTextSize ?? TextSize.standard) * 14 / 16
+        Text(item.clockText(at: model.clock.now)).font(.system(size: size).monospacedDigit()).lineLimit(1)
     }
 }
 
